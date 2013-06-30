@@ -1,13 +1,13 @@
 
 (in-package #:cl-user)
 
-(defpackage #:cl-ngxmpp-ext-system
+(defpackage #:cl-ngxmpp-client-system
   (:use #:cl #:asdf))
 
-(in-package #:cl-ngxmpp-ext-system)
+(in-package #:cl-ngxmpp-client-system)
 
-(defsystem cl-ngxmpp-ext
-  :name "cl-ngxmpp-ext"
+(defsystem cl-ngxmpp-client
+  :name "cl-ngxmpp-client"
   :author "Michael Nedokushev"
   :license "MIT"
   :depends-on (:cl-ngxmpp)

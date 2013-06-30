@@ -48,13 +48,13 @@
   (close (socket-stream connection))
   connection)
 
-(defmethod connect ((connection connection) &key (hostname *default-hostname*) (port *default-port*))
+(defmethod connect ((connection connection))
   "Open TCP connection to port on hostname, create and open socket, and returns connection."
-  (let* ((socket (usocket:socket-connect hostname port :element-type '(unsigned-byte 8)))
+  (let* ((socket (usocket:socket-connect
+                  (hostname connection) (port connection) :element-type '(unsigned-byte 8)))
          (stream (usocket:socket-stream socket)))
-    (progn
       (setf (socket connection) socket)
-      (setf (socket-stream connection) stream))
+      (setf (socket-stream connection) stream)
     connection))
     
     
