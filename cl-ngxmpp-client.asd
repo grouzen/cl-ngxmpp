@@ -11,5 +11,5 @@
   :author "Michael Nedokushev"
   :license "MIT"
   :depends-on (:cl-ngxmpp)
-  :components ((:file "xmpp")))
+  :components ((:file "client")))
 

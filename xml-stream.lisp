@@ -41,11 +41,11 @@
     (force-output *debug-io*)))
 
 (defmethod close-stream ((stream xml-stream))
-  (with-xml (stream)
+  (with-stream-xml-output (stream)
     (cxml:with-element "stream:stream")))
     
 (defmethod open-stream ((stream xml-stream))
-  (with-xml (stream)
+  (with-stream-xml-output (stream)
     (cxml:with-element "stream:stream"
       (cxml:attribute "to" (hostname (connection stream)))
       (cxml:attribute "xmlns" "jabber:client")
@@ -53,7 +53,7 @@
       (cxml:attribute "version" "1.0"))))
   
 
-(defmacro with-xml ((xml-stream) &body body)
+(defmacro with-stream-xml-output ((xml-stream) &body body)
   (let ((xml (gensym "xml"))
         (xml-string (gensym "xml-string"))
         (stream (gensym "stream")))
