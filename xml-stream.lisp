@@ -27,6 +27,10 @@
     :initarg :debuggable
     :initform nil)))
 
+(defcreate xml-stream
+  ((:connection connection)
+   (:debuggable debuggable)))
+
 (defmethod write-to-stream ((stream xml-stream) string)
   (let ((seq (babel:string-to-octets string))
         (socket-stream (socket-stream (connection stream))))
@@ -52,16 +56,11 @@
 (defmacro with-xml ((xml-stream) &body body)
   (let ((xml (gensym "xml"))
         (xml-string (gensym "xml-string"))
-        (stream (gensym "stream"))
-        (debuggable (gensym "debuggable")))
-    `(let ((,stream (socket-stream (connection ,xml-stream)))
-           (,debuggable (debuggable ,xml-stream)))
+        (stream (gensym "stream")))
+    `(let ((,stream (socket-stream (connection ,xml-stream))))
        (prog1
            (let* ((,xml (cxml:with-xml-output
                             (cxml:make-octet-vector-sink :canonical nil :indentation 2)
                           ,@body))
                   (,xml-string (babel:octets-to-string ,xml)))
              (write-to-stream ,xml-stream ,xml-string))))))
-
-(defun create-stream (connection &key (debuggable nil))
-  (make-instance 'xml-stream :connection connection :debuggable debuggable))

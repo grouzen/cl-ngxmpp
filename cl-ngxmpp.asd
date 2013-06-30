@@ -12,5 +12,6 @@
   :license "MIT"
   :depends-on (:usocket :cxml :babel)
   :components ((:file "package")
-               (:file "connection" :depends-on ("package"))
-               (:file "xml-stream"     :depends-on ("connection"))))
+               (:file "utils"      :depends-on ("package"))
+               (:file "connection" :depends-on ("utils"))
+               (:file "xml-stream" :depends-on ("connection"))))

@@ -1,7 +1,9 @@
 
 (defpackage #:cl-ngxmpp
   (:use :cl)
-  (:export #:connect
+  (:export #:create-connection
+           #:create-xml-stream
+           #:connect
            #:disconnect
            #:connectedp
            #:open-stream
