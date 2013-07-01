@@ -26,3 +26,12 @@ objects outside of this package, so encapsulation isn't broken."
          ,(intern (apply #'concatenate 'string (mapcar #'symbol-name (list 'create- `,class))))
          (,@func-args)
        (make-instance ',class ,@body-args))))
+
+(defmacro string-case (string &body cases)
+  "I just didn't find a simple solution for case with strings,
+so I wrote this ugly and I think very slow macro. If you know
+a better way tell me, please."
+  (let ((cond-cases (mapcar #'(lambda (case)
+                                (list (list 'string= string (car case)) (cadr case)))
+                            cases)))
+    `(cond ,@cond-cases)))

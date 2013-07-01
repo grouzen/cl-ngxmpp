@@ -19,4 +19,5 @@
 (defpackage #:cl-ngxmpp-client
   (:use :cl)
   (:export #:create-client
+           #:disconnect
            #:connect))

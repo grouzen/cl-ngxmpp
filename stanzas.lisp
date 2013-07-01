@@ -18,9 +18,14 @@
     :initarg :xml-node
     :initform nil)))
 
+;; TODO: dispatch over all heirs of stanza.
 (defmethod xml-to-stanza ((stanza stanza))
-  stanza)
-
+  (let ((qname (dom:node-name (dom:first-child (xml-node stanza)))))
+    (flet ((make-stanza (class) (xml-to-stanza (make-instance class))))
+      (string-case qname
+        ("stream:stream" (make-stanza 'stream-stanza))
+        ("message"       (make-stanza 'message))))))
+        
 
 (defclass stream-stanza (stanza)
   ((to
@@ -42,7 +47,7 @@
 
 ;; TODO: read from (xml-node stanza) and fill fields.
 (defmethod xml-to-stanza ((stanza stream-stanza))
-  (make-instance 'stream-stanza))
+  stanza)
 
 (defmethod stanza-to-xml ((stanza stream-stanza))
   (cxml:with-element "stream:stream"
@@ -93,20 +98,5 @@
 
 (defclass iq-error (iq)
   ())
-
-(defmethod stanza-to-xml ((stanza message))
-  t)
-
-(defmethod stanza-to-xml ((stanza presence))
-  t)
-
-(defmethod stanza-to-xml ((stanza iq))
-  t)
-
-(defmethod stanza-to-xml ((iq-set iq))
-  t)
-
-(defmethod stanza-to-xml ((iq-result iq))
-  t)
 
                           

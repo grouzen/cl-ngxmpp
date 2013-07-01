@@ -65,8 +65,8 @@
 
 ;; FIXME: when we just load systems cl-ngxmpp and cl-ngxmpp-client
 ;; and call (cl-ngxmpp-client:connect *client*),
-;; we receive error CL-NGXMPP::XML-STREAM is undefined function,
-;; but if we just redefine open-stream (C-x C-e in slime) error disappears.
+;; we receive error "CL-NGXMPP::XML-STREAM is undefined function",
+;; but when we redefine open-stream (C-x C-e in slime) error disappears.
 (defmethod open-stream ((xml-stream xml-stream))
   (progn
     (with-stanza-output (xml-stream)
