@@ -14,4 +14,5 @@
   :components ((:file "package")
                (:file "utils"      :depends-on ("package"))
                (:file "connection" :depends-on ("utils"))
-               (:file "xml-stream" :depends-on ("connection"))))
+               (:file "xml-stream" :depends-on ("connection"))
+               (:file "stanzas"    :depends-on ("xml-stream"))))

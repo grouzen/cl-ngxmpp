@@ -59,6 +59,15 @@
     (when (xml-stream obj)
       (print (cl-ngxmpp:connection (xml-stream obj)) stream))))
 
+(defmethod disconnect ((client client))
+  (let* ((xml-stream (xml-stream client))
+         (connection (cl-ngxmpp:connection xml-stream)))
+    (when (cl-ngxmpp:openedp xml-stream)
+      (cl-ngxmpp:close-stream xml-stream))
+    (when (and (not (null connection))
+               (cl-ngxmpp:connectedp connection))
+      (cl-ngxmpp:disconnect connection))))
+
 (defmethod connect ((client client))
   (let ((connection (cl-ngxmpp:create-connection
                      :hostname (server-hostname client)
@@ -67,8 +76,5 @@
       (let ((xml-stream (cl-ngxmpp:create-xml-stream
                          :connection connection
                          :debuggable (debuggable client))))
-        (setf (xml-stream client) xml-stream)))
-        ;(cl-ngxmpp:open-stream xml-stream)))
-    client))
-  
-
+          (setf (xml-stream client) xml-stream)
+          (cl-ngxmpp:open-stream xml-stream)))))

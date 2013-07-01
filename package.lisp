@@ -11,6 +11,8 @@
            #:close-stream
            #:create-stream
            #:connection
+           #:openedp
+           #:closedp
            #:*default-hostname*
            #:*default-port*))
 
