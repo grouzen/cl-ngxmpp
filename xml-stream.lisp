@@ -16,10 +16,6 @@
     :accessor features
     :initarg :features
     :initform nil)
-   (stanza-callback
-    :accessor stanza-callback
-    :initarg :stanza-callback
-    :initform nil)
    (state
     :accessor state
     :initarg :state
@@ -54,37 +50,36 @@
         (socket-stream (socket-stream (connection xml-stream))))
     (loop for byte = (read-byte socket-stream nil 0)
        until (zerop byte)
-       do (progn (princ byte) (vector-push-extend byte seq)))
+       do  (vector-push-extend byte seq))
     (babel:octets-to-string seq)))
   
-;(defmacro with-xml-stream ((xml-stream &rest slots) &body body)
-;  `(with-slots (,xml-stream ,@slots)
-;       ,@body))
-
 (defmethod openedp ((xml-stream xml-stream))
   (eq (state xml-stream) 'opened))
 
 (defmethod closedp ((xml-stream xml-stream))
   (eq (state xml-stream) 'closed))
 
-(defmethod close-stream ((xml-stream xml-stream))  
-  (with-stream-xml-output (xml-stream)
-    (cxml:with-element "stream:stream")))
-    
+(defmethod close-stream ((xml-stream xml-stream))
+  (with-stanza-output (xml-stream)
+    (make-instance 'stream-stanza-close)))
+
+;; FIXME: when we just load systems cl-ngxmpp and cl-ngxmpp-client
+;; and call (cl-ngxmpp-client:connect *client*),
+;; we receive error CL-NGXMPP::XML-STREAM is undefined function,
+;; but if we just redefine open-stream (C-x C-e in slime) error disappears.
 (defmethod open-stream ((xml-stream xml-stream))
   (progn
-    (with-stream-xml-output (xml-stream)
-      (cxml:with-element "stream:stream"
-        (cxml:attribute "to" (hostname (connection xml-stream)))
-        (cxml:attribute "xmlns" "jabber:client")
-        (cxml:attribute "xmlns:stream" "http://etherx.jabber.org/streams")
-        (cxml:attribute "version" "1.0")))))
- ;   (cxml:parse (read-from-stream xml-stream)
- ;               (make-instance 'xml-stream-handler :xml-stream xml-stream))))
-
-;(defmacro with-stream-xml-input ((stream) &body body)
-;  ,@body)
-
+    (with-stanza-output (xml-stream)
+      (make-instance 'stream-stanza
+                     :to (hostname (connection xml-stream))
+                     :xmlns "jabber:client"))
+    (with-stanza-input (xml-stream stanza-input)
+      stanza-input)))
+             
+(defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
+  `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
+     ,@body))
+  
 (defmacro with-stream-xml-output ((xml-stream) &body body)
   (let ((xml (gensym "xml"))
         (xml-string (gensym "xml-string")))
@@ -93,16 +88,3 @@
                     ,@body))
             (,xml-string (babel:octets-to-string ,xml)))
        (write-to-stream ,xml-stream ,xml-string))))
-
-;(defclass xml-stream-handler (sax:default-handler)
-;  ((xml-stream
-;    :accessor xml-stream
-;    :initarg :xml-stream
-;    :initform nil)
-;   (answer
-;    :accessor :answer
-;    :initarg :initarg
-;    :initform nil)))
-
-;(defmethod sax:start-element ((handler xml-stream-handler) namespace-uri lname qname attrs)
-;  (
