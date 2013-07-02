@@ -51,7 +51,11 @@
     (loop for byte = (read-byte socket-stream nil 0)
        until (zerop byte)
        do  (vector-push-extend byte seq))
-    (babel:octets-to-string seq)))
+    (let ((result (babel:octets-to-string seq)))
+      (when (debuggable xml-stream)
+        (write-string result *debug-io*)
+        (force-output *debug-io*))
+      result)))
   
 (defmethod openedp ((xml-stream xml-stream))
   (eq (state xml-stream) 'opened))
@@ -74,6 +78,8 @@
                      :to (hostname (connection xml-stream))
                      :xmlns "jabber:client"))
     (with-stanza-input (xml-stream stanza-input)
+      ;; TODO: check type of stanza-input, so we could
+      ;;       open stream or throw error.
       stanza-input)))
              
 (defmacro with-stream-xml-input ((xml-stream xml-input) &body body)

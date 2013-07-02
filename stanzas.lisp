@@ -12,19 +12,29 @@
          ,@body))))
 
 
+(defgeneric make-stanza (stanza class-name)
+  (:documentation
+   "This method makes new instance of `class-name' stanza,
+fill it with the necessary fields taken from the parent,
+and calls `xml-to-stanza' with this new instance. This method
+needs to be implemented only for parental classes"))
+
 (defclass stanza ()
   ((xml-node
     :accessor xml-node
     :initarg :xml-node
     :initform nil)))
 
+
+(defmethod make-stanza ((stanza stanza) class-name)
+  (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))
+
 ;; TODO: dispatch over all heirs of stanza.
 (defmethod xml-to-stanza ((stanza stanza))
   (let ((qname (dom:node-name (dom:first-child (xml-node stanza)))))
-    (flet ((make-stanza (class) (xml-to-stanza (make-instance class))))
-      (string-case qname
-        ("stream:stream" (make-stanza 'stream-stanza))
-        ("message"       (make-stanza 'message))))))
+    (string-case qname
+      ("stream:stream" (make-stanza stanza 'stream-stanza))
+      ("message"       (make-stanza stanza 'message)))))
         
 
 (defclass stream-stanza (stanza)
@@ -45,9 +55,23 @@
     :initarg :version
     :initform "1.0")))
 
+(defmethod make-stanza ((stanza stream-stanza) class-name)
+  (xml-to-stanza (make-instance class-name
+                                :xml-node     (xml-node stanza)
+                                :to           (to stanza)
+                                :xmlns        (xmlns stanza)
+                                :xmlns-stream (xmlns-stream stanza)
+                                :version      (version stanza))))
+
 ;; TODO: read from (xml-node stanza) and fill fields.
 (defmethod xml-to-stanza ((stanza stream-stanza))
-  stanza)
+  (let* ((xml-node (xml-node stanza))
+         (child (dom:first-child (dom:first-child xml-node)))
+         (child-qname (dom:node-name child)))
+    ;(write-string child-qname *debug-io*)))
+    (string-case child-qname
+      ("stream:features" (make-stanza stanza 'stream-stanza-features))
+      ("stream:error"    (make-stanza stanza 'stream-stanza-error)))))
 
 (defmethod stanza-to-xml ((stanza stream-stanza))
   (cxml:with-element "stream:stream"
@@ -56,6 +80,16 @@
     (cxml:attribute "xmlns:stream" (xmlns-stream stanza))
     (cxml:attribute "version" (version stanza))))
 
+
+(defclass stream-stanza-features (stream-stanza)
+  ((features
+   :accessor features
+   :initarg :features
+   :initform nil)))
+
+(defmethod xml-to-stanza ((stanza stream-stanza-features))
+  (setf (features stanza) (dom:first-child (dom:first-child (xml-node stanza))))
+  stanza)
 
 (defclass stream-stanza-close (stream-stanza) ())
 
