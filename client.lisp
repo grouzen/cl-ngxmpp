@@ -38,10 +38,10 @@
 (cl-ngxmpp:defcreate client
   ((:username username)
    (:password password)
-   (:resource resource)
-   (:server-hostname server-hostname)
-   (:server-port server-port)
-   (:debuggable debuggable)))
+   (:resource (resource "cl-ngxmpp"))
+   (:server-hostname (server-hostname "localhost"))
+   (:server-port (server-port 5222))
+   (:debuggable (debuggable t))))
 
 (defmethod jid ((client client))
   "Returns full jid, i.e. username@server.com/resource."

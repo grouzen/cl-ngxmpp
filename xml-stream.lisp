@@ -15,7 +15,9 @@
    (features
     :accessor features
     :initarg :features
-    :initform nil)
+    :initform nil
+    :documentation
+    "Instance of class `stream-stanza-features'")
    (state
     :accessor state
     :initarg :state
@@ -64,23 +66,33 @@
   (eq (state xml-stream) 'closed))
 
 (defmethod close-stream ((xml-stream xml-stream))
+  (setf (state xml-stream) 'closed)
   (with-stanza-output (xml-stream)
     (make-instance 'stream-stanza-close)))
+
+(defmethod restart-stream ((xml-stream xml-stream))
+  (setf (features xml-stream) nil)
+  (setf (id xml-stream) nil)
+  (close-stream xml-stream)
+  (open-stream xml-stream))
 
 ;; FIXME: when we just load systems cl-ngxmpp and cl-ngxmpp-client
 ;; and call (cl-ngxmpp-client:connect *client*),
 ;; we receive error "CL-NGXMPP::XML-STREAM is undefined function",
 ;; but when we redefine open-stream (C-x C-e in slime) error disappears.
 (defmethod open-stream ((xml-stream xml-stream))
-  (progn
-    (with-stanza-output (xml-stream)
-      (make-instance 'stream-stanza
-                     :to (hostname (connection xml-stream))
-                     :xmlns "jabber:client"))
-    (with-stanza-input (xml-stream stanza-input)
-      ;; TODO: check type of stanza-input, so we could
-      ;;       open stream or throw error.
-      stanza-input)))
+  (with-stanza-output (xml-stream)
+    (make-instance 'stream-stanza
+                   :to (hostname (connection xml-stream))
+                   :xmlns "jabber:client"))
+  (with-stanza-input (xml-stream stanza-input)
+    ;; TODO: check type of stanza-input, so we could
+    ;;       open stream or throw error.
+    (when (typep stanza-input 'stream-stanza-features)
+      (setf (state xml-stream) 'opened)
+      (setf (features xml-stream) stanza-input)
+      (setf (id xml-stream) (id stanza-input)))
+    stanza-input))
              
 (defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
   `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
