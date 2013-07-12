@@ -10,7 +10,7 @@
     `(with-stream-xml-input (,xml-stream ,xml-input)
        (let ((,stanza-input (xml-to-stanza (make-instance 'stanza :xml-node ,xml-input))))
          ,@body))))
-
+    
 
 (defgeneric make-stanza (stanza class-name)
   (:documentation
@@ -34,7 +34,6 @@ needs to be implemented only for parental classes"))
     :initarg :xml-node
     :initform nil)))
 
-
 (defmethod make-stanza ((stanza stanza) class-name)
   (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))
 
@@ -42,9 +41,23 @@ needs to be implemented only for parental classes"))
 (defmethod xml-to-stanza ((stanza stanza))
   (let ((qname (dom:node-name (dom:first-child (xml-node stanza)))))
     (string-case qname
-      ("stream:stream" (make-stanza stanza 'stream-stanza))
-      ("message"       (make-stanza stanza 'message)))))
+      ("stream:stream"   (make-stanza stanza 'stream-stanza))
+      ("message"         (make-stanza stanza 'message))
+      ("failure"         (make-stanza stanza 'failure-stanza))
+      ("proceed"         (make-stanza stanza 'proceed-stanza))
+      (:default          (make-stanza stanza 'unknown-stanza)))))
+
+
+(defclass unknown-stanza (stanza)
+  ())
+
+(defmethod print-object ((obj unknown-stanza) stream)
+  (print-unreadable-object (obj stream :type t :identity t)
+    (format "Unknown type of stanza: ~A" (dom:node-name (dom:first-child (xml-node obj))))))
         
+(defmethod xml-to-stanza ((stanza unknown-stanza))
+  stanza)
+
 
 (defclass stream-stanza (stanza)
   ((to
@@ -102,8 +115,8 @@ This class describes <stream:stream/> - XML entity which RFC 6120 calls `stream'
          (child (dom:first-child (dom:first-child xml-node)))
          (child-qname (dom:node-name child)))
     (string-case child-qname
-      ("stream:features" (make-stanza stanza 'stream-stanza-features))
-      ("stream:error"    (make-stanza stanza 'stream-stanza-error)))))
+      ("stream:features" (make-stanza stanza 'stream-features-stanza))
+      ("stream:error"    (make-stanza stanza 'stream-error-stanza)))))
 
 (defmethod stanza-to-xml ((stanza stream-stanza))
   (cxml:with-element "stream:stream"
@@ -113,13 +126,8 @@ This class describes <stream:stream/> - XML entity which RFC 6120 calls `stream'
     (cxml:attribute "xmlns:stream" (xmlns-stream stanza))
     (cxml:attribute "version" (version stanza))))
 
-(defconstant +supported-features+
-  (list
-   'starttls ; mandatory-to-negotiate (TLS negotiation)
-   'mechanisms ; mandatory-to-negotiate (SASL negotiation)
-   ))
 
-(defclass stream-stanza-features (stream-stanza)
+(defclass stream-features-stanza (stream-stanza)
   ((features
    :accessor features
    :initarg :features
@@ -130,7 +138,19 @@ This class describes <stream:stream/> - XML entity which RFC 6120 calls `stream'
    "Subclass of `stream-stanza' which describes <stream:stream><stream:features/><stream:stream/>
 entity. It is returned by a receiving entity (e.g. on client-to-server communication is a server)."))
 
-(defmethod xml-to-stanza ((stanza stream-stanza-features))
+(defmethod print-object ((obj stream-features-stanza) stream)
+  (print-unreadable-object (obj stream :type t :identity t)
+    (mapcar #'(lambda (feature)
+                (let ((feature-name (car feature))
+                      (feature-required (cdr feature)))
+                  (format stream "{~A -> ~A} " feature-name
+                          (if feature-required
+                              "required"
+                              "not required"))))
+            (features obj)))
+  (call-next-method obj stream))
+
+(defmethod xml-to-stanza ((stanza stream-features-stanza))
   (let ((features (features stanza)))
     (dom:map-node-list
      #'(lambda (node)
@@ -144,47 +164,82 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     stanza))
 
 
-(defclass stream-stanza-close (stream-stanza) ())
+(defclass stream-close-stanza (stream-stanza) ())
 
-(defmethod xml-to-stanza ((stanza stream-stanza-close))
-  (make-instance 'stream-stanza-close))
+(defmethod xml-to-stanza ((stanza stream-close-stanza))
+  stanza)
 
-(defmethod stanza-to-xml ((stanza stream-stanza-close))
+(defmethod stanza-to-xml ((stanza stream-close-stanza))
   (cxml:with-element "stream:stream"))
 
 
-(defclass stream-stanza-error (stream-stanza)
+(defclass stream-error-stanza (stream-stanza)
   ((error-node
    :accessor error-node
    :initarg :error-node
    :initform nil)))
 
 
-(defclass message (stanza)
+(defclass message-stanza (stanza)
   ())
 
-(defclass message-error (message)
+(defclass message-error-stanza (message-stanza)
   ())
 
-(defclass presence (stanza)
+(defclass presence-stanza (stanza)
   ())
 
-(defclass presence-error (presence)
+(defclass presence-error-stanza (presence-stanza)
   ())
 
-(defclass iq (stanza)
+(defclass iq-stanza (stanza)
   ())
 
-(defclass iq-get (iq)
+(defclass iq-get-stanza (iq-stanza)
   ())
 
-(defclass iq-set (iq)
+(defclass iq-set-stanza (iq-stanza)
   ())
 
-(defclass iq-result (iq)
+(defclass iq-result-stanza (iq-stanza)
   ())
 
-(defclass iq-error (iq)
+(defclass iq-error-stanza (iq-stanza)
   ())
 
-                          
+
+(defclass starttls-stanza (stanza)
+  ((xmlns
+    :accessor xmlns
+    :initarg :xmlns
+    :initform "urn:ietf:params:xml:ns:xmpp-tls")))
+
+(defmethod stanza-to-xml ((stanza starttls-stanza))
+  (cxml:with-element "starttls"
+    (cxml:attribute "xmlns" (xmlns stanza))))
+
+(defmethod xml-to-stanza ((stanza starttls-stanza))
+  stanza)
+
+
+(defclass proceed-stanza (stanza)
+  ())
+
+(defmethod xml-to-stanza ((stanza proceed-stanza))
+  stanza)
+
+
+(defclass failure-stanza (stanza)
+  ((xmlns
+    :accessor xmlns
+    :initarg :xmlns
+    :initform "")))
+
+(defmethod print-object ((obj failure-stanza) stream)
+  (print-unreadable-object (obj stream :type t :identity t)
+    (format stream "xmlns: ~A" (xmlns obj))))
+
+(defmethod xml-to-stanza ((stanza failure-stanza))
+  (setf (xmlns stanza) (dom:node-name (dom:first-child (xml-node stanza))))
+  stanza)
+         

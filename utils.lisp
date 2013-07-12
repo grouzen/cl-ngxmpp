@@ -32,6 +32,8 @@ objects outside of this package, so encapsulation isn't broken."
 so I wrote this ugly and I think very slow macro. If you know
 a better way tell me, please."
   (let ((cond-cases (mapcar #'(lambda (case)
-                                (list (list 'string= string (car case)) (cadr case)))
+                                (if (eq (car case) :default)
+                                    (list 't (cadr case))
+                                    (list (list 'string= string (car case)) (cadr case))))
                             cases)))
     `(cond ,@cond-cases)))

@@ -51,7 +51,7 @@
 (defmethod connect ((connection connection))
   "Open TCP connection to port on hostname, create and open socket, and returns connection."
   (let* ((socket (usocket:socket-connect
-                  (hostname connection) (port connection) :element-type '(unsigned-byte 8)))
+                  (hostname connection) (port connection) :element-type 'character))
          (stream (usocket:socket-stream socket)))
       (setf (socket connection) socket)
       (setf (socket-stream connection) stream)

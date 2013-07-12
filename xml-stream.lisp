@@ -1,7 +1,9 @@
 
-(in-package :cl-ngxmpp)
+(in-package #:cl-ngxmpp)
 
-(defconstant +default-read-seq-size+ 1024)
+(defconstant +default-read-seq-size+ 4096)
+
+;(defconstant +stanza-reader-bytes-size+ 65535)
 
 (defclass xml-stream ()
   ((connection
@@ -36,29 +38,22 @@
     (format stream "~A ~A ~A" (id obj) (symbol-name (state obj)) (debuggable obj))))
 
 (defmethod write-to-stream ((xml-stream xml-stream) string)
-  (let ((seq (babel:string-to-octets string))
-        (socket-stream (socket-stream (connection xml-stream))))
-    (write-sequence seq socket-stream)
+  (let ((socket-stream (socket-stream (connection xml-stream))))
+    (write-string string socket-stream)
     (force-output socket-stream)
     (when (debuggable xml-stream)
-      (write-string string *debug-io*)
+      (write-line string *debug-io*)
       (force-output *debug-io*))))
 
 (defmethod read-from-stream ((xml-stream xml-stream))
-  (let ((seq (make-array +default-read-seq-size+
-                         :element-type '(unsigned-byte 8)
-                         :fill-pointer 0
-                         :adjustable t))
-        (socket-stream (socket-stream (connection xml-stream))))
-    (loop for byte = (read-byte socket-stream nil 0)
-       until (zerop byte)
-       do  (vector-push-extend byte seq))
-    (let ((result (babel:octets-to-string seq)))
-      (when (debuggable xml-stream)
-        (write-string result *debug-io*)
-        (force-output *debug-io*))
-      result)))
-  
+  (let ((socket-stream (socket-stream (connection xml-stream)))
+        (result (result (stanza-reader-read-stream
+                         (make-instance 'stanza-reader :stanza-stream socket-stream)))))
+    (when (debuggable xml-stream)
+      (write-line result *debug-io*)
+      (force-output *debug-io*))
+    result))
+
 (defmethod openedp ((xml-stream xml-stream))
   (eq (state xml-stream) 'opened))
 
@@ -73,26 +68,31 @@
 (defmethod restart-stream ((xml-stream xml-stream))
   (setf (features xml-stream) nil)
   (setf (id xml-stream) nil)
-  (close-stream xml-stream)
   (open-stream xml-stream))
 
-;; FIXME: when we just load systems cl-ngxmpp and cl-ngxmpp-client
-;; and call (cl-ngxmpp-client:connect *client*),
-;; we receive error "CL-NGXMPP::XML-STREAM is undefined function",
-;; but when we redefine open-stream (C-x C-e in slime) error disappears.
+(defmethod has-mandatory-to-negotiate ((xml-stream xml-stream))
+  t)
+
 (defmethod open-stream ((xml-stream xml-stream))
-  (with-stanza-output (xml-stream)
-    (make-instance 'stream-stanza
-                   :to (hostname (connection xml-stream))
-                   :xmlns "jabber:client"))
-  (with-stanza-input (xml-stream stanza-input)
-    ;; TODO: check type of stanza-input, so we could
-    ;;       open stream or throw error.
-    (when (typep stanza-input 'stream-stanza-features)
+  (let ((socket-stream (socket-stream (connection xml-stream))))
+    ;; Send <stream:stream> to initiate connection
+    (write-to-stream xml-stream
+                     (format nil "<?xml version='1.0'?><stream:stream to='~A' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>"
+                             (hostname (connection xml-stream))))
+    ;; Read <?xml?> header
+    (stanza-reader-read-stream (make-instance 'stanza-reader-header :stanza-stream socket-stream))
+    ;; Read <stream:stream> with features
+    (let* ((features-result
+            (format nil "~A</stream:stream>"
+                    (result (stanza-reader-read-stream
+                             (make-instance 'stanza-reader-features :stanza-stream socket-stream)))))
+           (features-result-xml (cxml:parse features-result (cxml-dom:make-dom-builder)))
+           (features-stanza (xml-to-stanza (make-instance 'stanza :xml-node features-result-xml))))
       (setf (state xml-stream) 'opened)
-      (setf (features xml-stream) stanza-input)
-      (setf (id xml-stream) (id stanza-input)))
-    stanza-input))
+      (setf (features xml-stream) features-stanza)
+      (when (debuggable xml-stream)
+        (print features-stanza *debug-io*)
+        (force-output *debug-io*)))))
              
 (defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
   `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
@@ -102,7 +102,160 @@
   (let ((xml (gensym "xml"))
         (xml-string (gensym "xml-string")))
     `(let* ((,xml (cxml:with-xml-output
-                      (cxml:make-octet-vector-sink :canonical nil :indentation 2)
+                      (cxml:make-octet-vector-sink :canonical 1)
                     ,@body))
             (,xml-string (babel:octets-to-string ,xml)))
        (write-to-stream ,xml-stream ,xml-string))))
+
+;;
+;; FSM for xml reading.
+;;
+;; Most of code taken and ported from:
+;; https://github.com/dmatveev/shampoo-emacs/blob/8302cc4e14653980c2027c98d84f9aa3d1b59ebb/shampoo.el#L400
+;;
+(defclass stanza-reader ()
+  ((stanza-stream
+    :accessor stanza-stream
+    :initarg :stanza-stream
+    :initform nil)
+   (state
+    :accessor state
+    :initarg :state
+    :initform :init)
+   (depth
+    :accessor depth
+    :initarg :depth
+    :initform 0)
+   (result
+    :accessor result
+    :initarg :result
+    :initform (make-array 4096 :element-type 'character :fill-pointer 0 :adjustable t))))
+
+(defmethod print-object ((obj stanza-reader) stream)
+  (print-unreadable-object (obj stream :type t :identity t)
+    (format stream "state: ~A, depth: ~D, result: ~A"
+            (state obj) (depth obj) (result obj))))
+
+(defmethod stanza-reader-switch ((stanza-reader stanza-reader) state)
+  (let ((current-state (state stanza-reader)))
+    (when (not (eq current-state state))
+      (setf (state stanza-reader) state)
+      (incf (depth stanza-reader)
+            (cond ((eq state :tag-opened) 1)
+                  ((eq state :tag-closed) -1)
+                  ((eq state :node-closed) -1)
+                  (t 0))))))
+        
+(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader))
+  (let ((state (state stanza-reader))
+        (depth (depth stanza-reader)))
+    (and (eq depth 0)
+         (or (eq state :node-closed)
+             (eq state :tag-closed)))))
+
+(defmethod stanza-reader-read-char ((stanza-reader stanza-reader))
+  (read-char (stanza-stream stanza-reader) nil :eof))
+
+(defmethod stanza-reader-process ((stanza-reader stanza-reader))
+  (let* ((state (state stanza-reader))
+         (next-state
+          (cond ((eq state :init)
+                 (when (stanza-reader-<-p stanza-reader)
+                   :tag-opened))
+                
+                ((eq state :tag-opened)
+                 (cond ((stanza-reader->-p  stanza-reader) :node-opened)
+                       ((stanza-reader-/>-p stanza-reader) :tag-closed)))
+
+                ((eq state :tag-closed)
+                 (cond ((stanza-reader-</-p stanza-reader) :node-closing)
+                       ((stanza-reader-<-p  stanza-reader) :tag-opened)))
+
+                ((eq state :node-opened)
+                 (cond ((stanza-reader-<-p  stanza-reader) :tag-opened)
+                       ((stanza-reader-</-p stanza-reader) :node-closing)))
+
+                ((eq state :node-closing)
+                 (when (stanza-reader->-p stanza-reader)
+                   :node-closed))
+
+                ((eq state :node-closed)
+                 (cond ((stanza-reader-<-p  stanza-reader) :tag-opened)
+                       ((stanza-reader-</-p stanza-reader) :node-closing)))
+
+                (t nil))))
+    (when next-state
+      (stanza-reader-switch stanza-reader next-state))))
+
+(defmethod stanza-reader-push-result ((stanza-reader stanza-reader))
+  (vector-push-extend (stanza-reader-read-char stanza-reader) (result stanza-reader)))
+
+(defmethod stanza-reader-read-stream ((stanza-reader stanza-reader))
+  (loop
+     until (stanza-reader-complete-p stanza-reader)
+     do (progn
+          (stanza-reader-process stanza-reader)
+          (stanza-reader-push-result stanza-reader)))
+  stanza-reader)
+
+(defmacro stanza-reader-with-char ((stanza-reader char) &body body)
+  (let ((result (gensym "result")))
+    `(let* ((,char (stanza-reader-read-char ,stanza-reader))
+            (,result ,@body))
+       (unread-char ,char (stanza-stream ,stanza-reader))
+       ,result)))
+       
+(defmethod stanza-reader-<-p ((stanza-reader stanza-reader))
+  (stanza-reader-with-char (stanza-reader current-char)
+    (stanza-reader-with-char (stanza-reader next-char)
+      (and (eq current-char #\<)
+           (not (eq next-char #\/))))))
+          
+(defmethod stanza-reader->-p ((stanza-reader stanza-reader))
+  (stanza-reader-with-char (stanza-reader current-char)
+    (eq current-char #\>)))
+
+(defmethod stanza-reader-/>-p ((stanza-reader stanza-reader))
+  (stanza-reader-with-char (stanza-reader current-char)
+    (stanza-reader-with-char (stanza-reader next-char)
+      (and (eq current-char #\/)
+           (eq next-char #\>)))))
+
+(defmethod stanza-reader-</-p ((stanza-reader stanza-reader))
+  (stanza-reader-with-char (stanza-reader current-char)
+    (stanza-reader-with-char (stanza-reader next-char)
+      (and (eq current-char #\<)
+           (eq next-char #\/)))))
+
+
+(defclass stanza-reader-header (stanza-reader) ())
+
+(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader-header))
+  (let ((state (state stanza-reader))
+        (depth (depth stanza-reader)))
+    (and (eq depth 1)
+         (eq state :node-opened))))
+
+
+(defclass stanza-reader-features (stanza-reader)
+  ((push-result
+    :accessor push-result
+    :initarg :push-result
+    :initform nil)))
+
+(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader-features))
+  (let ((state (state stanza-reader))
+        (depth (depth stanza-reader)))
+    (and (eq depth 1)
+         (eq state :node-closed))))
+
+#|
+(defmethod stanza-reader-push-result ((stanza-reader stanza-reader-features))
+  (if (push-result stanza-reader)
+      (call-next-method stanza-reader)
+      (progn
+        (stanza-reader-read-char stanza-reader)
+        (when (and (>= (depth stanza-reader) 1)
+                   (eq (state stanza-reader) :node-opened))
+          (setf (push-result stanza-reader) t)))))
+|#

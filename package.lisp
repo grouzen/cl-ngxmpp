@@ -6,6 +6,7 @@
            #:defcreate
            #:connect
            #:disconnect
+           #:negotiate-tls
            #:connectedp
            #:open-stream
            #:close-stream

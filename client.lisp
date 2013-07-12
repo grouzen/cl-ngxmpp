@@ -69,7 +69,7 @@
                (cl-ngxmpp:connectedp connection))
       (cl-ngxmpp:disconnect connection))))
 
-(defmethod connect ((client client))
+(defmethod connect ((client client) &key (authorize t))
   (let ((connection (cl-ngxmpp:create-connection
                      :hostname (server-hostname client)
                      :port     (server-port     client))))
@@ -79,3 +79,8 @@
                          :debuggable (debuggable client))))
           (setf (xml-stream client) xml-stream)
           (cl-ngxmpp:open-stream xml-stream)))))
+          ;(cl-ngxmpp:negotiate-tls xml-stream)))))
+
+(defmethod authorize ((client client))
+  "Calls SASL authorization over TLS connection."
+  t)
