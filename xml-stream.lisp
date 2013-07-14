@@ -1,10 +1,6 @@
 
 (in-package #:cl-ngxmpp)
 
-(defconstant +default-read-seq-size+ 4096)
-
-;(defconstant +stanza-reader-bytes-size+ 65535)
-
 (defclass xml-stream ()
   ((connection
     :accessor connection
@@ -46,9 +42,9 @@
       (force-output *debug-io*))))
 
 (defmethod read-from-stream ((xml-stream xml-stream))
-  (let ((socket-stream (socket-stream (connection xml-stream)))
-        (result (result (stanza-reader-read-stream
-                         (make-instance 'stanza-reader :stanza-stream socket-stream)))))
+  (let* ((socket-stream (socket-stream (connection xml-stream)))
+         (result (result (stanza-reader-read-stream
+                          (make-instance 'stanza-reader :stanza-stream socket-stream)))))
     (when (debuggable xml-stream)
       (write-line result *debug-io*)
       (force-output *debug-io*))
@@ -63,7 +59,7 @@
 (defmethod close-stream ((xml-stream xml-stream))
   (setf (state xml-stream) 'closed)
   (with-stanza-output (xml-stream)
-    (make-instance 'stream-stanza-close)))
+    (make-instance 'stream-close-stanza)))
 
 (defmethod restart-stream ((xml-stream xml-stream))
   (setf (features xml-stream) nil)
@@ -126,6 +122,10 @@
     :accessor depth
     :initarg :depth
     :initform 0)
+   (last-chars
+    :accessor last-chars
+    :initarg :last-chars
+    :initform nil)
    (result
     :accessor result
     :initarg :result
@@ -133,8 +133,8 @@
 
 (defmethod print-object ((obj stanza-reader) stream)
   (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "state: ~A, depth: ~D, result: ~A"
-            (state obj) (depth obj) (result obj))))
+    (format stream "state: ~A, depth: ~D, result: ~A, last-chars: ~A"
+            (state obj) (depth obj) (result obj) (last-chars obj))))
 
 (defmethod stanza-reader-switch ((stanza-reader stanza-reader) state)
   (let ((current-state (state stanza-reader)))
@@ -152,9 +152,6 @@
     (and (eq depth 0)
          (or (eq state :node-closed)
              (eq state :tag-closed)))))
-
-(defmethod stanza-reader-read-char ((stanza-reader stanza-reader))
-  (read-char (stanza-stream stanza-reader) nil :eof))
 
 (defmethod stanza-reader-process ((stanza-reader stanza-reader))
   (let* ((state (state stanza-reader))
@@ -190,19 +187,34 @@
 (defmethod stanza-reader-push-result ((stanza-reader stanza-reader))
   (vector-push-extend (stanza-reader-read-char stanza-reader) (result stanza-reader)))
 
+(defmethod stanza-reader-push-last-chars ((stanza-reader stanza-reader) char)
+  (setf (last-chars stanza-reader) (append (list char) (last-chars stanza-reader))))
+
+(defmethod stanza-reader-pop-last-chars ((stanza-reader stanza-reader))
+  (let ((char (car (last-chars stanza-reader))))
+    (setf (last-chars stanza-reader) (cdr (last-chars stanza-reader)))
+    char))
+
+(defmethod stanza-reader-read-char ((stanza-reader stanza-reader))
+  (if (null (last-chars stanza-reader))
+      (read-char (stanza-stream stanza-reader) nil :eof)
+      (stanza-reader-pop-last-chars stanza-reader)))
+
 (defmethod stanza-reader-read-stream ((stanza-reader stanza-reader))
   (loop
      until (stanza-reader-complete-p stanza-reader)
      do (progn
-          (stanza-reader-process stanza-reader)
+          (stanza-reader-process stanza-reader)          
           (stanza-reader-push-result stanza-reader)))
+  ;; TODO: remove this hack
+  (mapcar #'(lambda (c) (vector-push-extend c (result stanza-reader))) (last-chars stanza-reader))
   stanza-reader)
 
 (defmacro stanza-reader-with-char ((stanza-reader char) &body body)
   (let ((result (gensym "result")))
     `(let* ((,char (stanza-reader-read-char ,stanza-reader))
             (,result ,@body))
-       (unread-char ,char (stanza-stream ,stanza-reader))
+       (stanza-reader-push-last-chars ,stanza-reader ,char)
        ,result)))
        
 (defmethod stanza-reader-<-p ((stanza-reader stanza-reader))
@@ -218,8 +230,8 @@
 (defmethod stanza-reader-/>-p ((stanza-reader stanza-reader))
   (stanza-reader-with-char (stanza-reader current-char)
     (stanza-reader-with-char (stanza-reader next-char)
-      (and (eq current-char #\/)
-           (eq next-char #\>)))))
+        (and (eq current-char #\/)
+             (eq next-char #\>)))))
 
 (defmethod stanza-reader-</-p ((stanza-reader stanza-reader))
   (stanza-reader-with-char (stanza-reader current-char)
@@ -248,14 +260,3 @@
         (depth (depth stanza-reader)))
     (and (eq depth 1)
          (eq state :node-closed))))
-
-#|
-(defmethod stanza-reader-push-result ((stanza-reader stanza-reader-features))
-  (if (push-result stanza-reader)
-      (call-next-method stanza-reader)
-      (progn
-        (stanza-reader-read-char stanza-reader)
-        (when (and (>= (depth stanza-reader) 1)
-                   (eq (state stanza-reader) :node-opened))
-          (setf (push-result stanza-reader) t)))))
-|#

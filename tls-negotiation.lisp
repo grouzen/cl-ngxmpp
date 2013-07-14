@@ -10,9 +10,9 @@
     (make-instance 'starttls-stanza)))
 
 (defmethod receive-tls-negotiation ((xml-stream xml-stream))
+  (write-string (format nil "~%RECEIVE TLS NEGOTIATION!!!!~%") *debug-io*)
   (with-stanza-input (xml-stream stanza-input)
-    (print stanza-input)
-    (cond ((typep stanza-input 'proceed-stanza) (proceed-tls-negotiation))
+    (cond ((typep stanza-input 'proceed-stanza) (proceed-tls-negotiation xml-stream))
           ((typep stanza-input 'failure-stanza) t)
           (t (error "Unexpected reply from TLS negotiation")))))
 
