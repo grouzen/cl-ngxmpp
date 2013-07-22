@@ -8,7 +8,7 @@
 
 (defsystem cl-ngxmpp-client
   :name "cl-ngxmpp-client"
-  :author "Michael Nedokushev"
+  :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
   :license "MIT"
   :depends-on (:cl-ngxmpp)
   :components ((:file "client")))

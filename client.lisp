@@ -36,9 +36,7 @@
     :initform nil)))
 
 (cl-ngxmpp:defcreate client
-  ((:username username)
-   (:password password)
-   (:resource (resource "cl-ngxmpp"))
+  ((:resource (resource "cl-ngxmpp"))
    (:server-hostname (server-hostname "localhost"))
    (:server-port (server-port 5222))
    (:debuggable (debuggable t))))
@@ -81,6 +79,8 @@
           (cl-ngxmpp:open-stream xml-stream)
           (cl-ngxmpp:negotiate-tls xml-stream)))))
 
-(defmethod authorize ((client client))
+(defmethod authorize ((client client) &key username password)
   "Calls SASL authorization over TLS connection."
-  t)
+  (setf (username client) username)
+  (setf (password client) password)
+  (cl-ngxmpp:negotiate-sasl (xml-stream client) :username username :password password))

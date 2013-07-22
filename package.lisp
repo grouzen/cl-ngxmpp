@@ -7,6 +7,7 @@
            #:connect
            #:disconnect
            #:negotiate-tls
+           #:negotiate-sasl
            #:connectedp
            #:open-stream
            #:close-stream

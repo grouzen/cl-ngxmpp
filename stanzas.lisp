@@ -44,7 +44,9 @@ needs to be implemented only for parental classes"))
       ("stream:stream"   (make-stanza stanza 'stream-stanza))
       ("message"         (make-stanza stanza 'message))
       ("failure"         (make-stanza stanza 'failure-stanza))
+      ("success"         (make-stanza stanza 'success-stanza))
       ("proceed"         (make-stanza stanza 'proceed-stanza))
+      ("challenge"       (make-stanza stanza 'sasl-challenge-stanza))
       (:default          (make-stanza stanza 'unknown-stanza)))))
 
 
@@ -229,6 +231,61 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   stanza)
 
 
+(defclass sasl-stanza (stanza)
+  ((xmlns
+    :reader xmlns
+    :initarg :xmlns
+    :initform "urn:ietf:params:xml:ns:xmpp-sasl")))
+
+(defmethod xml-to-stanza ((stanza sasl-stanza))
+  (let* ((xml-node (xml-node stanza))
+         (response-node (dom:first-child xml-node)))
+    (setf (xmlns stanza) (dom:get-attribute response-node "xmlns"))
+    stanza))
+
+
+(defclass sasl-auth-stanza (sasl-stanza)
+  ((mechanism
+    :accessor mechanism
+    :initarg :mechanism
+    :initform "DIGEST-MD5")))
+   
+(defmethod stanza-to-xml ((stanza sasl-auth-stanza))
+  (cxml:with-element "auth"
+    (cxml:attribute "xmlns"     (xmlns stanza))
+    (cxml:attribute "mechanism" (mechanism stanza))))
+
+
+(defclass sasl-response-stanza (sasl-stanza)
+  ((identity-string
+    :accessor identity-string
+    :initarg :identity-string
+    :initform nil)))
+
+(defmethod stanza-to-xml ((stanza sasl-response-stanza))
+  (cxml:with-element "response"
+    (cxml:attribute "xmlns" (xmlns stanza))
+    (unless (null (identity-string stanza))
+      (cxml:text (identity-string stanza)))))
+
+(defclass sasl-challenge-stanza (sasl-stanza)
+  ((identity-string
+    :accessor identity-string
+    :initarg :identity-string
+    :initform nil)))
+
+(defmethod print-object ((obj sasl-challenge-stanza) stream)
+  (print-unreadable-object (obj stream :type t :identity t)
+    (format stream "identity-string: ~A" (identity-string obj))))
+
+(defmethod xml-to-stanza ((stanza sasl-challenge-stanza))
+  (let ((xml-node (xml-node stanza)))
+    (setf (identity-string stanza)
+          (base64:base64-string-to-string
+           (dom:data (dom:first-child (dom:first-child xml-node)))))
+    stanza))
+         
+    
 (defclass failure-stanza (stanza)
   ((xmlns
     :accessor xmlns
@@ -240,6 +297,20 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     (format stream "xmlns: ~A" (xmlns obj))))
 
 (defmethod xml-to-stanza ((stanza failure-stanza))
-  (setf (xmlns stanza) (dom:node-name (dom:first-child (xml-node stanza))))
+  (setf (xmlns stanza) (dom:get-attribute (dom:first-child (xml-node stanza)) "xmlns"))
   stanza)
          
+
+(defclass success-stanza (stanza)
+  ((xmlns
+    :accessor xmlns
+    :initarg :xmlns
+    :initform "")))
+
+(defmethod xml-to-stanza ((stanza success-stanza))
+  (setf (xmlns stanza) (dom:get-attribute (dom:first-child (xml-node stanza)) "xmlns"))
+  stanza)
+
+(defmethod print-object ((obj success-stanza) stream)
+  (print-unreadable-object (obj stream :type t :identity t)
+    (format stream "xmlns: ~A" (xmlns obj))))
