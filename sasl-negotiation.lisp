@@ -56,7 +56,7 @@
 
 (defmethod %sasl-digest-md5-negotiation% ((xml-stream xml-stream) sasl-client)
   (with-stanza-output (xml-stream)
-    (make-instance 'sasl-auth-stanza :mechanism (%choose-mechanism% "DIGEST-MD5")))
+    (make-instance 'sasl-auth-stanza :mechanism "DIGEST-MD5"))
   (with-stanza-input (xml-stream first-challenge-stanza)
     (cond ((typep first-challenge-stanza 'sasl-challenge-stanza)
            (let ((response (base64:usb8-array-to-base64-string

@@ -20,6 +20,6 @@
   :components
   ((:file "client")
    (:module "examples"
-            :components ((:file "send-receive-messages"))
+            :components ((:file "echo-bot"))
             :pathname "examples")))
 

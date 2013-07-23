@@ -29,6 +29,9 @@
            ;; Stanzas
            #:message-stanza
            #:iq-result-stanza
+           #:iq-get-stanza
+           #:iq-set-stanza
+           #:iq-result-stanza
            #:iq-set-bind-stanza
            #:iq-set-session-stanza
            #:presence-stanza))

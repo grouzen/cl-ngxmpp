@@ -7,6 +7,9 @@
 
 (in-package #:cl-ngxmpp)
 
+;;
+;; Macros for receive/send stanzas.
+;;
 (defmacro with-stanza-output ((xml-stream) &body body)
   `(with-stream-xml-output (,xml-stream)
      (stanza-to-xml ,@body)))
@@ -40,7 +43,7 @@ needs to be implemented only for parental classes"))
 ;;
 ;; Basic stanza class.
 ;;
-;; TODO: export from cl-ngxmpp package.
+;; TODO: export children of stanza class from cl-ngxmpp package.
 ;;
 (defclass stanza ()
   ((xml-node
@@ -234,7 +237,11 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
          (message-node (dom:first-child xml-node))
          (to           (dom:get-attribute message-node "to"))
          (from         (dom:get-attribute message-node "from"))
-         (body         (dom:data (dom:first-child (dom:first-child message-node)))))
+         (body         (dom:data
+                        (dom:first-child
+                         (loop for el across (dom:child-nodes (dom:first-child (xml-node stanza)))
+                            do (when (equal (dom:node-name el) "body")
+                                 (return el)))))))
     (setf (to stanza) to
           (from stanza) from
           (body stanza) body)
@@ -310,22 +317,26 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   (let* ((xml-node (xml-node stanza))
          (iq-node (dom:first-child xml-node)))
     (xml-to-stanza (make-instance class-name
-                                  :xml-node     xml-node
-                                  :to           (dom:get-attribute iq-node "to")
-                                  :from         (dom:get-attribute iq-node "from")
-                                  :id           (dom:get-attribute iq-node "id")
-                                  :iq-type      (dom:get-attribute iq-node "type")))))
+                                  :xml-node xml-node
+                                  :to       (dom:get-attribute iq-node "to")
+                                  :from     (dom:get-attribute iq-node "from")
+                                  :id       (dom:get-attribute iq-node "id")
+                                  :iq-type  (dom:get-attribute iq-node "type")))))
 
 (defmethod xml-to-stanza ((stanza iq-stanza))
   (let* ((xml-node (xml-node stanza))
          (iq-type  (dom:get-attribute (dom:first-child xml-node) "type")))
     (string-case iq-type
       ("result" (make-stanza stanza 'iq-result-stanza))
-      ("error"  (make-stanza stanza 'iq-error-stanza)))))
+      ("error"  (make-stanza stanza 'iq-error-stanza))
+      ("get"    (make-stanza stanza 'iq-get-stanza)))))
       
 
 (defclass iq-get-stanza (iq-stanza) ())
-    
+
+(defmethod xml-to-stanza ((stanza iq-get-stanza))
+  stanza)
+
 (defclass iq-set-stanza (iq-stanza) ())
 
 (defmacro with-iq-set-stanza ((iq-set-stanza) &body body)
@@ -341,14 +352,15 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
    (resource
     :accessor resource
     :initarg :resource
-    :initform "cl-ngxmpp")))
+    :initform nil)))
 
 (defmethod stanza-to-xml ((stanza iq-set-bind-stanza))
   (with-iq-set-stanza (stanza)
     (cxml:with-element "bind"
       (cxml:attribute "xmlns" (xmlns stanza))
-      (cxml:with-element "resource"
-        (cxml:text (resource stanza))))))
+      (unless (null (resource stanza))
+        (cxml:with-element "resource"
+          (cxml:text (resource stanza)))))))
 
 
 (defclass iq-set-session-stanza (iq-set-stanza)
