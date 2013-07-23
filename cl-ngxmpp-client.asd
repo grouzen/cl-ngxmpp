@@ -17,9 +17,5 @@
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
   :license "MIT"
   :depends-on (:cl-ngxmpp)
-  :components
-  ((:file "client")
-   (:module "examples"
-            :components ((:file "echo-bot"))
-            :pathname "examples")))
+  :components ((:file "client")))
 

@@ -8,7 +8,7 @@
 (in-package #:cl-ngxmpp)
 
 ;;
-;; Macros for receive/send stanzas.
+;; Macros for receiving/sending stanzas.
 ;;
 (defmacro with-stanza-output ((xml-stream) &body body)
   `(with-stream-xml-output (,xml-stream)
