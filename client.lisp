@@ -55,11 +55,11 @@
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~A " (jid obj))
     (when (xml-stream obj)
-      (print (cl-ngxmpp:connection (xml-stream obj)) stream))))
+      (print (cl-ngxmpp::connection (xml-stream obj)) stream))))
 
 (defmethod disconnect ((client client))
   (let* ((xml-stream (xml-stream client))
-         (connection (cl-ngxmpp:connection xml-stream)))
+         (connection (cl-ngxmpp::connection xml-stream)))
     (when (and (not (null xml-stream))
                (cl-ngxmpp:openedp xml-stream))
       (cl-ngxmpp:close-stream xml-stream))
@@ -81,6 +81,37 @@
 
 (defmethod authorize ((client client) &key username password)
   "Calls SASL authorization over TLS connection."
-  (setf (username client) username)
-  (setf (password client) password)
-  (cl-ngxmpp:negotiate-sasl (xml-stream client) :username username :password password))
+  (let ((xml-stream (xml-stream client)))
+    (setf (username client) username)
+    (setf (password client) password)
+    (cl-ngxmpp:negotiate-sasl xml-stream :username username :password password)
+    ;; TODO: hide into cl-ngxmpp package
+    (cl-ngxmpp:with-stanza-output (xml-stream) ;; Send iq bind set stanza
+      (make-instance 'cl-ngxmpp::iq-set-bind-stanza
+                     :id       "bind_2"
+                     :resource (resource client)))
+    (cl-ngxmpp:with-stanza-input (xml-stream iq-bind) ;; Receive id bind result
+      iq-bind)
+    (cl-ngxmpp:with-stanza-output (xml-stream) ;; Send presence
+      (make-instance 'presence-stanza))
+    (cl-ngxmpp:with-stanza-input (xml-stream presence) ;; Receive self-presence stanza
+      presence)))
+
+(defmethod proceed-stanza-loop ((client client))
+  (let ((xml-stream (xml-stream client)))
+    (loop
+       until (cl-ngxmpp:closedp xml-stream)
+       do (proceed-stanza client))))
+
+(defmethod proceed-stanza ((client client))
+  (let ((xml-stream (xml-stream client)))
+    (cl-ngxmpp:with-stanza-input (xml-stream stanza)
+      (cl-ngxmpp:handle-stanza stanza))))
+
+(defmethod send-message ((client client) &key to body)
+  (let ((xml-stream (xml-stream client)))
+    (cl-ngxmpp:with-stanza-output (xml-stream)
+      (make-instance 'cl-ngxmpp::message-stanza
+                     :from (jid client)
+                     :to   to
+                     :body body))))

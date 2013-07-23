@@ -20,5 +20,5 @@
     (setf (socket-stream connection)
           (cl+ssl:make-ssl-client-stream
            (socket-stream connection)
-           :external-format :iso-8859-1))
+           :external-format :utf-8))
     (restart-stream xml-stream)))

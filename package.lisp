@@ -12,9 +12,11 @@
            #:open-stream
            #:close-stream
            #:create-stream
-           #:connection
+           #:with-stanza-input
+           #:with-stanza-output
            #:openedp
            #:closedp
+           #:handle-stanza
            #:*default-hostname*
            #:*default-port*))
 
@@ -22,4 +24,8 @@
   (:use :cl)
   (:export #:create-client
            #:disconnect
+           #:authorize
+           #:send-message
+           #:proceed-stanza
+           #:proceed-stanza-loop
            #:connect))

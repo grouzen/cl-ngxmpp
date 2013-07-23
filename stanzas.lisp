@@ -27,12 +27,23 @@ needs to be implemented only for parental classes"))
   (:documentation
    "Returns xml object which is transformed further to string."))
 
+(defgeneric handle-stanza (stanza)
+  (:documentation
+   "This handler must be overrided on client code."))
 
+;;
+;; Basic stanza class.
+;;
+;; TODO: export from cl-ngxmpp package.
+;;
 (defclass stanza ()
   ((xml-node
     :accessor xml-node
     :initarg :xml-node
     :initform nil)))
+
+(defmethod handle-stanza ((stanza stanza))
+  (error "Default stanza handler called. Please define handler for this type of stanza: ~A" stanza))
 
 (defmethod make-stanza ((stanza stanza) class-name)
   (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))
@@ -42,11 +53,13 @@ needs to be implemented only for parental classes"))
   (let ((qname (dom:node-name (dom:first-child (xml-node stanza)))))
     (string-case qname
       ("stream:stream"   (make-stanza stanza 'stream-stanza))
-      ("message"         (make-stanza stanza 'message))
+      ("message"         (make-stanza stanza 'message-stanza))
       ("failure"         (make-stanza stanza 'failure-stanza))
       ("success"         (make-stanza stanza 'success-stanza))
       ("proceed"         (make-stanza stanza 'proceed-stanza))
       ("challenge"       (make-stanza stanza 'sasl-challenge-stanza))
+      ("iq"              (make-stanza stanza 'iq-stanza))
+      ("presence"        (make-stanza stanza 'presence-stanza))
       (:default          (make-stanza stanza 'unknown-stanza)))))
 
 
@@ -157,9 +170,11 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     (dom:map-node-list
      #'(lambda (node)
          (let* ((feature-name (dom:node-name node))
-                (feature-required (cond ((string= feature-name "starttls") t)
-                                        ((string= feature-name "mechanisms") t)
-                                        (t nil)))) ; TODO: check on <requred/> element.
+                (feature-required (string-case feature-name
+                                    ("mechanisms" t) ;; These three features are 
+                                    ("starttls"   t) ;; mandatory-to-negitiate for 
+                                    ("bind"       t) ;; client and server, see RFC 6120.
+                                    (:default     nil)))) ;; TODO: check on <required/> element
            (setf features (cons (cons feature-name feature-required) features))))
      (dom:child-nodes (dom:first-child (dom:first-child (xml-node stanza)))))
     (setf (features stanza) features)
@@ -181,35 +196,152 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
    :initarg :error-node
    :initform nil)))
 
-
+;;
+;; Message stanzas
+;;
 (defclass message-stanza (stanza)
-  ())
+  ((from
+    :accessor from
+    :initarg :from
+    :initform nil)
+   (to
+    :accessor to
+    :initarg :to
+    :initform nil)
+   (body
+    :accessor body
+    :initarg :body
+    :initform "")))
+
+(defmethod stanza-to-xml ((stanza message-stanza))
+  (cxml:with-element "message"
+    (unless (null (from stanza))
+      (cxml:attribute "from" (from stanza)))
+    (unless (null (to stanza))
+      (cxml:attribute "to" (to stanza)))
+    (cxml:with-element "body"
+      (cxml:text (body stanza)))))
+
+(defmethod xml-to-stanza ((stanza message-stanza))
+  (let* ((xml-node     (xml-node stanza))
+         (message-node (dom:first-child xml-node))
+         (to           (dom:get-attribute message-node "to"))
+         (from         (dom:get-attribute message-node "from"))
+         (body         (dom:data (dom:first-child (dom:first-child message-node)))))
+    (setf (to stanza) to
+          (from stanza) from
+          (body stanza) body)
+    stanza))
+    
 
 (defclass message-error-stanza (message-stanza)
   ())
 
-(defclass presence-stanza (stanza)
-  ())
+;;
+;; Presence stanzas
+;;
+(defclass presence-stanza (stanza) ())
+
+(defmethod xml-to-stanza ((stanza presence-stanza))
+  stanza)
+
+(defmethod stanza-to-xml ((stanza presence-stanza))
+  (cxml:with-element "presence"))
+
 
 (defclass presence-error-stanza (presence-stanza)
   ())
 
+;;
+;; IQ stanzas
+;;
 (defclass iq-stanza (stanza)
-  ())
+  ((id
+    :accessor id
+    :initarg :id
+    :initform nil)
+   (iq-type
+    :accessor iq-type
+    :initarg :iq-type
+    :initform "get")
+   (to
+    :accessor to
+    :initarg :to
+    :initform nil)
+   (from
+    :accessor from
+    :initarg :from
+    :initform nil)))
 
-(defclass iq-get-stanza (iq-stanza)
-  ())
+(defmacro with-iq-stanza ((iq-stanza) &body body)
+  `(cxml:with-element "iq"
+    (cxml:attribute "id" (id ,iq-stanza))
+    (unless (null (to stanza))
+      (cxml:attribute "to" (to ,iq-stanza)))
+    (unless (null (from stanza))
+      (cxml:attribute "from" (from ,iq-stanza)))
+    ,@body))
 
-(defclass iq-set-stanza (iq-stanza)
-  ())
+(defmethod make-stanza ((stanza iq-stanza) class-name)
+  (let* ((xml-node (xml-node stanza))
+         (iq-node (dom:first-child xml-node)))
+    (xml-to-stanza (make-instance class-name
+                                  :xml-node     xml-node
+                                  :to           (dom:get-attribute iq-node "to")
+                                  :from         (dom:get-attribute iq-node "from")
+                                  :id           (dom:get-attribute iq-node "id")
+                                  :iq-type      (dom:get-attribute iq-node "type")))))
 
-(defclass iq-result-stanza (iq-stanza)
-  ())
+(defmethod xml-to-stanza ((stanza iq-stanza))
+  (let* ((xml-node (xml-node stanza))
+         (iq-type  (dom:get-attribute (dom:first-child xml-node) "type")))
+    (string-case iq-type
+      ("result" (make-stanza stanza 'iq-result-stanza))
+      ("error"  (make-stanza stanza 'iq-error-stanza)))))
+      
 
-(defclass iq-error-stanza (iq-stanza)
-  ())
+(defclass iq-get-stanza (iq-stanza) ())
+    
+(defclass iq-set-stanza (iq-stanza) ())
+
+(defmacro with-iq-set-stanza ((iq-set-stanza) &body body)
+  `(with-iq-stanza (,iq-set-stanza)
+     (cxml:attribute "type" "set")
+     ,@body))
+                    
+
+(defclass iq-set-bind-stanza (iq-set-stanza)
+  ((xmlns
+    :reader xmlns
+    :initform "urn:ietf:params:xml:ns:xmpp-bind")
+   (resource
+    :accessor resource
+    :initarg :resource
+    :initform "cl-ngxmpp")))
+
+(defmethod stanza-to-xml ((stanza iq-set-bind-stanza))
+  (with-iq-set-stanza (stanza)
+    (cxml:with-element "bind"
+      (cxml:attribute "xmlns" (xmlns stanza))
+      (cxml:with-element "resource"
+        (cxml:text (resource stanza))))))
 
 
+(defclass iq-result-stanza (iq-stanza) ())
+
+(defmethod xml-to-stanza ((stanza iq-result-stanza))
+  stanza)
+
+
+(defclass iq-error-stanza (iq-stanza) ())
+
+(defmethod xml-to-stanza ((stanza iq-error-stanza))
+  stanza)
+
+;;
+;; TODO: move starttls, proceed, sasl, etc
+;;       to corresponding files.
+;;
 (defclass starttls-stanza (stanza)
   ((xmlns
     :accessor xmlns

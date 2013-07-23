@@ -38,7 +38,7 @@
     (write-string string socket-stream)
     (force-output socket-stream)
     (when (debuggable xml-stream)
-      (write-line string *debug-io*)
+      (write-line (format nil "Sent: ~A" string) *debug-io*)
       (force-output *debug-io*))))
 
 (defmethod read-from-stream ((xml-stream xml-stream))
@@ -46,7 +46,7 @@
          (result (result (stanza-reader-read-stream
                           (make-instance 'stanza-reader :stanza-stream socket-stream)))))
     (when (debuggable xml-stream)
-      (write-line result *debug-io*)
+      (write-line (format nil "Received: ~A" result) *debug-io*)
       (force-output *debug-io*))
     result))
 
@@ -87,6 +87,7 @@
       (setf (state xml-stream) 'opened)
       (setf (features xml-stream) features-stanza)
       (when (debuggable xml-stream)
+        (write-line (format nil "Received stream: ~A" features-result) *debug-io*)
         (print features-stanza *debug-io*)
         (force-output *debug-io*)))))
              

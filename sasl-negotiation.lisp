@@ -38,6 +38,7 @@
                           (with-stanza-output (xml-stream) ;; Send second and last <response/>
                             (make-instance 'sasl-response-stanza))
                           (with-stanza-input (xml-stream auth-success) ;; Receive <success/>
+                            (restart-stream xml-stream)
                             auth-success))
                          ((typep second-challenge 'failure-stanza) (sasl-fail second-challenge))
                          (t nil)))))
