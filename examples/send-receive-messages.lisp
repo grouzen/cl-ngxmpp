@@ -1,3 +1,9 @@
+;;;; send-receive-messages.lisp
+;;;;
+;;;; This file is part of the CL-NGXMPP library, released under Lisp-LGPL.
+;;;; See file COPYING for details.
+;;;;
+;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
 (defpackage #:cl-ngxmpp-client.examples
   (:use #:cl #:cl-ngxmpp-client))
@@ -23,5 +29,5 @@
     (send-message client
                   :to to
                   :body body)
-    (proceed-stanza-loop client) ;; wait for message from opponent
+    (proceed-stanza-loop client) ;; wait for messages from opponent
     (disconnect client))) ;; close connection
