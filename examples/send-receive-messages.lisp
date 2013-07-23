@@ -16,12 +16,12 @@
                       (cl-ngxmpp::to   stanza)
                       (cl-ngxmpp::body stanza))))
 
-(defun run (&key server-hostname username password to body)
+(defun run (&key server-hostname username password mechanism to body)
   (let ((client (create-client :server-hostname server-hostname)))
     (connect client)
-    (authorize client :username username :password password)
+    (authorize client :username username :password password :mechanism mechanism)
     (send-message client
                   :to to
                   :body body)
-    (proceed-stanza client) ;; wait for message from opponent
+    (proceed-stanza-loop client) ;; wait for message from opponent
     (disconnect client))) ;; close connection

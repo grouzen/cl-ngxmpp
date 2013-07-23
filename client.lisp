@@ -79,14 +79,18 @@
           (cl-ngxmpp:open-stream xml-stream)
           (cl-ngxmpp:negotiate-tls xml-stream)))))
 
-(defmethod authorize ((client client) &key username password)
+(defmethod authorize ((client client) &key username password mechanism)
   "Calls SASL authorization over TLS connection."
   (let ((xml-stream (xml-stream client)))
     (setf (username client) username
           (password client) password)
     ;; SASL negotiation
-    (cl-ngxmpp:negotiate-sasl xml-stream :username username :password password)
+    (cl-ngxmpp:negotiate-sasl xml-stream
+                              :username username
+                              :password password
+                              :mechanism mechanism)
     (%bind% client) ;; Bind resource
+    (%session% client) ;; Open session
     (send-presence client :show "online") ;; Send presence
     (proceed-stanza client))) ;; Receive self-presence stanza, ignore it.
 
@@ -98,7 +102,15 @@
                      :id       "bind"
                      :resource (resource client)))
     (proceed-stanza client)))
-        
+
+(defmethod %session% ((client client))
+  (let ((xml-stream (xml-stream client)))
+    (cl-ngxmpp:with-stanza-output (xml-stream)
+      (make-instance 'cl-ngxmpp:iq-set-session-stanza
+                     :to (server-hostname client)
+                     :id "sess"))
+    (proceed-stanza client)))
+
 (defmethod proceed-stanza-loop ((client client))
   (let ((xml-stream (xml-stream client)))
     (loop

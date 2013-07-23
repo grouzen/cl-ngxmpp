@@ -171,9 +171,10 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
      #'(lambda (node)
          (let* ((feature-name (dom:node-name node))
                 (feature-required (string-case feature-name
-                                    ("mechanisms" t) ;; These three features are 
+                                    ("session"    t) ;; TODO: implement required checking.
+                                    ("mechanisms" t) ;; These four features are 
                                     ("starttls"   t) ;; mandatory-to-negitiate for 
-                                    ("bind"       t) ;; client and server, see RFC 6120.
+                                    ("bind"       t) ;; client and server, see RFC 6120 and RFC 3921.
                                     (:default     nil)))) ;; TODO: check on <required/> element
            (setf features (cons (cons feature-name feature-required) features))))
      (dom:child-nodes (dom:first-child (dom:first-child (xml-node stanza)))))
@@ -344,6 +345,17 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
         (cxml:text (resource stanza))))))
 
 
+(defclass iq-set-session-stanza (iq-set-stanza)
+  ((xmlns
+    :reader xmlns
+    :initform "urn:ietf:params:xml:ns:xmpp-session")))
+
+(defmethod stanza-to-xml ((stanza iq-set-session-stanza))
+  (with-iq-set-stanza (stanza)
+    (cxml:with-element "session"
+      (cxml:attribute "xmlns" (xmlns stanza)))))
+
+
 (defclass iq-result-stanza (iq-stanza) ())
 
 (defmethod xml-to-stanza ((stanza iq-result-stanza))
@@ -397,12 +409,18 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   ((mechanism
     :accessor mechanism
     :initarg :mechanism
-    :initform "DIGEST-MD5")))
+    :initform "DIGEST-MD5")
+   (identity-string
+    :accessor identity-string
+    :initarg :identity-string
+    :initform nil)))
    
 (defmethod stanza-to-xml ((stanza sasl-auth-stanza))
   (cxml:with-element "auth"
     (cxml:attribute "xmlns"     (xmlns stanza))
-    (cxml:attribute "mechanism" (mechanism stanza))))
+    (cxml:attribute "mechanism" (mechanism stanza))
+    (unless (null (identity-string stanza))
+      (cxml:text (identity-string stanza)))))
 
 
 (defclass sasl-response-stanza (sasl-stanza)

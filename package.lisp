@@ -24,6 +24,7 @@
            #:message-stanza
            #:iq-result-stanza
            #:iq-set-bind-stanza
+           #:iq-set-session-stanza
            #:presence-stanza))
 
 (defpackage #:cl-ngxmpp-client
