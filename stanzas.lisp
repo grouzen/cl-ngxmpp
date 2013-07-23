@@ -240,14 +240,31 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 ;;
 ;; Presence stanzas
 ;;
-(defclass presence-stanza (stanza) ())
+(defclass presence-stanza (stanza)
+  ((to
+    :accessor to
+    :initarg :to
+    :initform nil)
+   (from
+    :accessor from
+    :initarg :from
+    :initform nil)
+   (show
+    :accessor show
+    :initarg :show
+    :initform nil)))
 
 (defmethod xml-to-stanza ((stanza presence-stanza))
   stanza)
 
 (defmethod stanza-to-xml ((stanza presence-stanza))
-  (cxml:with-element "presence"))
-
+  (cxml:with-element "presence"
+    (unless (null (to stanza))
+      (cxml:attribute "to"   (to stanza)))
+    (unless (null (from stanza))
+      (cxml:attribute "from" (from stanza)))
+    (cxml:with-element "show"
+      (cxml:text (show stanza)))))
 
 (defclass presence-error-stanza (presence-stanza)
   ())

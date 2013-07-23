@@ -4,8 +4,14 @@
 
 (in-package #:cl-ngxmpp-client.examples)
 
-(defmethod cl-ngxmpp:handle-stanza ((stanza cl-ngxmpp::message-stanza))
-  (write-line (format nil "~A -> ~A: ~A~%"
+(defmethod cl-ngxmpp:handle-stanza ((stanza cl-ngxmpp:presence-stanza))
+  (write-line "Presence received."))
+
+(defmethod cl-ngxmpp:handle-stanza ((stanza cl-ngxmpp:iq-result-stanza))
+  (write-line "Bind result stanza received."))
+
+(defmethod cl-ngxmpp:handle-stanza ((stanza cl-ngxmpp:message-stanza))
+  (write-line (format nil "~A -> ~A: ~A"
                       (cl-ngxmpp::from stanza)
                       (cl-ngxmpp::to   stanza)
                       (cl-ngxmpp::body stanza))))

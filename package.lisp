@@ -1,7 +1,10 @@
 
 (defpackage #:cl-ngxmpp
   (:use :cl)
-  (:export #:create-connection
+  (:export #:*default-hostname*
+           #:*default-port*
+           ;; Methods
+           #:create-connection
            #:create-xml-stream
            #:defcreate
            #:connect
@@ -17,8 +20,11 @@
            #:openedp
            #:closedp
            #:handle-stanza
-           #:*default-hostname*
-           #:*default-port*))
+           ;; Stanzas
+           #:message-stanza
+           #:iq-result-stanza
+           #:iq-set-bind-stanza
+           #:presence-stanza))
 
 (defpackage #:cl-ngxmpp-client
   (:use :cl)
@@ -26,6 +32,7 @@
            #:disconnect
            #:authorize
            #:send-message
+           #:send-presence
            #:proceed-stanza
            #:proceed-stanza-loop
            #:connect))
