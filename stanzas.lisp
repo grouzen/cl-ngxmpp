@@ -40,6 +40,8 @@ needs to be implemented only for parental classes"))
   (:documentation
    "This handler must be overrided on client code."))
 
+(define-condition handle-stanza-condition (simple-condition) ())
+
 ;;
 ;; Basic stanza class.
 ;;
@@ -52,7 +54,8 @@ needs to be implemented only for parental classes"))
     :initform nil)))
 
 (defmethod handle-stanza ((stanza stanza))
-  (error "Default stanza handler called. Please define handler for this type of stanza: ~A" stanza))
+  (error 'handle-stanza-condition
+         :format-control "Default stanza handler called. Please define handler for this type of stanza"))
 
 (defmethod make-stanza ((stanza stanza) class-name)
   (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))

@@ -34,7 +34,10 @@
            #:iq-result-stanza
            #:iq-set-bind-stanza
            #:iq-set-session-stanza
-           #:presence-stanza))
+           #:presence-stanza
+           ;; Conditions
+           #:handle-stanza-condition
+           #:negotiate-sasl-condition))
 
 (defpackage #:cl-ngxmpp-client
   (:use :cl)

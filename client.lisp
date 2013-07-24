@@ -90,15 +90,28 @@
   (let ((xml-stream (xml-stream client)))
     (setf (username client) username
           (password client) password)
-    ;; SASL negotiation
-    (cl-ngxmpp:negotiate-sasl xml-stream
-                              :username username
-                              :password password
-                              :mechanism mechanism)
-    (%bind% client) ;; Bind resource
-    (%session% client) ;; Open session
-    (send-presence client :show "online") ;; Send presence
-    (proceed-stanza client))) ;; Receive self-presence stanza, ignore it.
+    (handler-bind
+        ((cl-ngxmpp:negotiate-sasl-condition
+          #'(lambda (c) (invoke-restart 'skip-sasl)))
+         (cl-ngxmpp:handle-stanza-condition
+          #'(lambda (c) (invoke-restart 'skip-handle-stanza))))
+      (macrolet ((with-steps ((&rest steps) &body restarts)
+                   (let ((steps-restarts
+                          (mapcar
+                           #'(lambda (step)
+                               `(restart-case ,step ,@restarts))
+                           steps)))
+                     `(progn ,@steps-restarts))))
+        (with-steps ((cl-ngxmpp:negotiate-sasl xml-stream
+                                               :username username
+                                               :password password
+                                               :mechanism mechanism)
+                     (%bind% client)
+                     (%session% client)
+                     (send-presence client :show "online")
+                     (proceed-stanza client))
+          (skip-sasl () nil)
+          (skip-handle-stanza () nil))))))
 
 (defmethod %bind% ((client client))
   (let ((xml-stream (xml-stream client))
@@ -119,9 +132,11 @@
 
 (defmethod proceed-stanza-loop ((client client))
   (let ((xml-stream (xml-stream client)))
-    (loop
-       until (cl-ngxmpp:closedp xml-stream)
-       do (proceed-stanza client))))
+    (handler-case
+        (loop
+           until (cl-ngxmpp:closedp xml-stream)
+           do (proceed-stanza client))
+      (cl-ngxmpp:handle-stanza-condition (c) (format nil "~S" c)))))
 
 (defmethod proceed-stanza ((client client))
   (let ((xml-stream (xml-stream client)))
