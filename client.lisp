@@ -86,10 +86,17 @@
           (cl-ngxmpp:negotiate-tls xml-stream)))))
 
 (defmethod authorize ((client client) &key username password mechanism)
-  "Calls SASL authorization over TLS connection."
+  "SASL authorization over TLS connection. Must be called after connect."
   (let ((xml-stream (xml-stream client)))
     (setf (username client) username
           (password client) password)
+    ;; This hell is needed for suppression of errors.
+    ;; Default cl-ngxmpp:handle-stanza signals a handle-stanza-condition,
+    ;; thus if client didn't define handle-stanza method for appropriate
+    ;; type of stanza, authorization will fail.
+    ;; There is another case about sasl negotiation, when authorization failed
+    ;; and server sends <failure/> stanza, but client didn't manage to define
+    ;; handle-stanza for failure stanza.
     (handler-bind
         ((cl-ngxmpp:negotiate-sasl-condition
           #'(lambda (c) (invoke-restart 'skip-sasl)))
