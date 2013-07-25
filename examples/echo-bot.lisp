@@ -6,7 +6,8 @@
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
 (defpackage #:cl-ngxmpp-client.examples.echo-bot
-  (:use #:cl))
+  (:use #:cl)
+  (:export #:run))
 
 (in-package #:cl-ngxmpp-client.examples.echo-bot)
 

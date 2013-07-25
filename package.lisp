@@ -6,7 +6,7 @@
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
 (defpackage #:cl-ngxmpp
-  (:use :cl)
+  (:use #:cl)
   (:export #:*default-hostname*
            #:*default-port*
            ;; Methods
@@ -40,7 +40,7 @@
            #:negotiate-sasl-condition))
 
 (defpackage #:cl-ngxmpp-client
-  (:use :cl)
+  (:use #:cl)
   (:export #:create-client
            #:disconnect
            #:authorize

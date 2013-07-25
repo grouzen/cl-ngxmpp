@@ -60,7 +60,7 @@ needs to be implemented only for parental classes"))
 (defmethod make-stanza ((stanza stanza) class-name)
   (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))
 
-;; TODO: dispatch over all heirs of stanza.
+;; TODO: dispatch over all heirs of stanzas.
 (defmethod xml-to-stanza ((stanza stanza))
   (let ((qname (dom:node-name (dom:first-child (xml-node stanza)))))
     (string-case qname
