@@ -8,44 +8,14 @@
 (in-package :cl-ngxmpp-client)
 
 (defclass client ()
-  ((username
-    :accessor username
-    :initarg :username
-    :initform "")
-   (password
-    :accessor password
-    :initarg :password
-    :initform "")
-   (resource
-    :accessor resource
-    :initarg :resource
-    :initform "cl-ngxmpp")
-   (server-hostname
-    :accessor server-hostname
-    :initarg :server-hostname
-    :initform cl-ngxmpp:*default-hostname*)
-   (server-port
-    :accessor server-port
-    :initarg :server-port
-    :initform cl-ngxmpp:*default-port*)
-   (xml-stream
-    :accessor xml-stream
-    :initarg :xml-stream
-    :initform nil)
-   (session
-    :accessor session
-    :initarg :session
-    :initform nil)
-   (debuggable
-    :accessor debuggable
-    :initarg :debuggable
-    :initform nil)))
-
-(cl-ngxmpp:defcreate client
-  ((:resource (resource "cl-ngxmpp"))
-   (:server-hostname (server-hostname "localhost"))
-   (:server-port (server-port 5222))
-   (:debuggable (debuggable t))))
+  ((username        :accessor username        :initarg :username        :initform "")
+   (password        :accessor password        :initarg :password        :initform "")
+   (resource        :accessor resource        :initarg :resource        :initform "cl-ngxmpp")
+   (server-hostname :accessor server-hostname :initarg :server-hostname :initform cl-ngxmpp:*default-hostname*)
+   (server-port     :accessor server-port     :initarg :server-port     :initform cl-ngxmpp:*default-port*)
+   (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)
+   (session         :accessor session         :initarg :session         :initform nil)
+   (debuggable      :accessor debuggable      :initarg :debuggable      :initform t)))
 
 (defmethod jid ((client client))
   "Returns full jid, i.e. username@server.com/resource."
@@ -71,14 +41,14 @@
       (cl-ngxmpp:close-stream xml-stream))
     (when (and (not (null connection))
                (cl-ngxmpp:connectedp connection))
-      (cl-ngxmpp:disconnect connection))))
+      (cl-ngxmpp:close-connection connection))))
 
 (defmethod connect ((client client))
-  (let ((connection (cl-ngxmpp:create-connection
+  (let ((connection (make-instance 'cl-ngxmpp:connection
                      :hostname (server-hostname client)
                      :port     (server-port     client))))
-    (when (cl-ngxmpp:connectedp (cl-ngxmpp:connect connection))
-      (let ((xml-stream (cl-ngxmpp:create-xml-stream
+    (when (cl-ngxmpp:connectedp (cl-ngxmpp:open-connection connection))
+      (let ((xml-stream (make-instance 'cl-ngxmpp:xml-stream
                          :connection connection
                          :debuggable (debuggable client))))
           (setf (xml-stream client) xml-stream)
@@ -141,8 +111,8 @@
   (let ((xml-stream (xml-stream client)))
     (handler-case
         (loop
-           until (cl-ngxmpp:closedp xml-stream)
-           do (proceed-stanza client))
+           :until (cl-ngxmpp:closedp xml-stream)
+           :do (proceed-stanza client))
       (cl-ngxmpp:handle-stanza-condition (c) (format nil "~S" c)))))
 
 (defmethod proceed-stanza ((client client))
@@ -165,4 +135,4 @@
                      :to to
                      :from from
                      :show show))))
-        
+

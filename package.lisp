@@ -10,14 +10,13 @@
   (:export #:*default-hostname*
            #:*default-port*
            ;; Methods
-           #:create-connection
-           #:create-xml-stream
            #:defcreate
-           #:connect
-           #:disconnect
+           #:string-to-keyword
            #:negotiate-tls
            #:negotiate-sasl
            #:connectedp
+           #:open-connection
+           #:close-connection
            #:open-stream
            #:close-stream
            #:create-stream
@@ -26,7 +25,13 @@
            #:openedp
            #:closedp
            #:handle-stanza
+           #:xep-exists-p
+           #:concat-symbols
+           ;; Classes
+           #:connection
+           #:xml-stream
            ;; Stanzas
+           #:stanza
            #:message-stanza
            #:iq-result-stanza
            #:iq-get-stanza
@@ -41,11 +46,15 @@
 
 (defpackage #:cl-ngxmpp-client
   (:use #:cl)
-  (:export #:create-client
-           #:disconnect
+  (:export #:disconnect
            #:authorize
            #:send-message
            #:send-presence
            #:proceed-stanza
            #:proceed-stanza-loop
-           #:connect))
+           #:connect
+           #:define-stanza-handler
+           #:call-methods-with-xep
+           #:use-xeps
+           ;; Classes
+           #:client))

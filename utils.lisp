@@ -7,6 +7,7 @@
 
 (in-package #:cl-ngxmpp)
 
+#+nil
 (defmacro defcreate (class &body body)
   "This macro creates function `create-class' which is replacement
 for make-instance, but with some features. It's necessary for creation of
@@ -29,9 +30,22 @@ objects outside of this package, so encapsulation isn't broken."
                          (append sa sb))))
                  (car body))))
     `(defun
-         ,(intern (apply #'concatenate 'string (mapcar #'symbol-name (list 'create- `,class))))
+         ,(concat-symbols 'create `,class)
          (,@func-args)
        (make-instance ',class ,@body-args))))
+
+;;
+;; TODO: add keys arguments for optional exporting of slots, class name, etc
+;;
+(defmacro defclass* (name direct-superclasses direct-slots &rest options)
+  "Use this macro if you need export class name and slots from class implicitly."
+  ;; export class name
+  ;(export name *package*)
+  ;; export slots
+  (mapcar #'(lambda (slot)
+              (export (find-symbol (symbol-name (car slot)) *package*) *package*))
+          direct-slots)
+  `(defclass ,name ,direct-superclasses ,direct-slots ,@options))
 
 (defmacro string-case (string &body cases)
   "I just didn't find a simple solution for case with strings,
@@ -43,3 +57,17 @@ a better way tell me, please."
                                     (list (list 'string= string (car case)) (cadr case))))
                             cases)))
     `(cond ,@cond-cases)))
+
+(defun string-to-keyword (string)
+  (multiple-value-bind (keyword-name keyword-status)
+      (values (intern (string-upcase string) :keyword))
+    (declare (ignore keyword-status))
+    keyword-name))
+
+(defun concat-symbols (&rest symbols)
+  (multiple-value-bind (keyword-name keyword-status)
+      (values (intern (apply #'concatenate 'string
+                             (mapcar #'symbol-name symbols))))
+    (declare (ignore keyword-status))
+    keyword-name))
+                 

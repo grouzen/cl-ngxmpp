@@ -8,32 +8,11 @@
 (in-package #:cl-ngxmpp)
 
 (defclass xml-stream ()
-  ((connection
-    :accessor connection
-    :initarg :connection
-    :initform nil)
-   (id
-    :accessor id
-    :initarg :id
-    :initform nil)
-   (features
-    :accessor features
-    :initarg :features
-    :initform nil
-    :documentation
-    "Instance of class `stream-stanza-features'")
-   (state
-    :accessor state
-    :initarg :state
-    :initform 'closed)
-   (debuggable
-    :accessor debuggable
-    :initarg :debuggable
-    :initform nil)))
-
-(defcreate xml-stream
-  ((:connection connection)
-   (:debuggable debuggable)))
+  ((connection :accessor connection :initarg :connection :initform nil)
+   (id         :accessor id         :initarg :id         :initform nil)
+   (features   :accessor features   :initarg :features   :initform nil)
+   (state      :accessor state      :initarg :state      :initform 'closed)
+   (debuggable :accessor debuggable :initarg :debuggable :initform nil)))
 
 (defmethod print-object ((obj xml-stream) stream)
   (print-unreadable-object (obj stream :type t :identity t)
@@ -117,26 +96,12 @@
 ;; https://github.com/dmatveev/shampoo-emacs/blob/8302cc4e14653980c2027c98d84f9aa3d1b59ebb/shampoo.el#L400
 ;;
 (defclass stanza-reader ()
-  ((stanza-stream
-    :accessor stanza-stream
-    :initarg :stanza-stream
-    :initform nil)
-   (state
-    :accessor state
-    :initarg :state
-    :initform :init)
-   (depth
-    :accessor depth
-    :initarg :depth
-    :initform 0)
-   (last-chars
-    :accessor last-chars
-    :initarg :last-chars
-    :initform nil)
-   (result
-    :accessor result
-    :initarg :result
-    :initform (make-array 4096 :element-type 'character :fill-pointer 0 :adjustable t))))
+  ((stanza-stream :accessor stanza-stream :initarg :stanza-stream :initform nil)
+   (state         :accessor state         :initarg :state         :initform :init)
+   (depth         :accessor depth         :initarg :depth         :initform 0)
+   (last-chars    :accessor last-chars    :initarg :last-chars    :initform nil)
+   (result        :accessor result        :initarg :result        :initform
+                  (make-array 4096 :element-type 'character :fill-pointer 0 :adjustable t))))
 
 (defmethod print-object ((obj stanza-reader) stream)
   (print-unreadable-object (obj stream :type t :identity t)
@@ -209,8 +174,8 @@
 
 (defmethod stanza-reader-read-stream ((stanza-reader stanza-reader))
   (loop
-     until (stanza-reader-complete-p stanza-reader)
-     do (progn
+     :until (stanza-reader-complete-p stanza-reader)
+     :do (progn
           (stanza-reader-process stanza-reader)          
           (stanza-reader-push-result stanza-reader)))
   ;; TODO: remove this hack

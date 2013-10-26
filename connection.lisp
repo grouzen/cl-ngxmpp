@@ -12,26 +12,10 @@
 (defvar *default-port* 5222)
 
 (defclass connection ()
-  ((hostname
-    :accessor hostname
-    :initarg :hostname
-    :initform *default-hostname*)
-   (port
-    :accessor port
-    :initarg :port
-    :initform *default-port*)
-   (socket
-    :accessor socket
-    :initarg :socket
-    :initform nil)
-   (socket-stream
-    :accessor socket-stream
-    :initarg :socket-stream
-    :initform nil)))
-
-(defcreate connection
-  ((:hostname hostname)
-   (:port port)))
+  ((hostname      :accessor hostname      :initarg :hostname      :initform *default-hostname*)
+   (port          :accessor port          :initarg :port          :initform *default-port*)
+   (socket        :accessor socket        :initarg :socket        :initform nil)
+   (socket-stream :accessor socket-stream :initarg :socket-stream :initform nil)))
   
 (defmethod print-object ((obj connection) stream)
   "Just print a human readable representation of connection object."
@@ -49,12 +33,12 @@
     (and (streamp stream)
          (open-stream-p stream))))
 
-(defmethod disconnect ((connection connection))
+(defmethod close-connection ((connection connection))
   "Close TCP connection."
   (close (socket-stream connection))
   connection)
 
-(defmethod connect ((connection connection))
+(defmethod open-connection ((connection connection))
   "Open TCP connection to port on hostname, create and open socket, and returns connection."
   (let* ((socket (usocket:socket-connect
                   (hostname connection) (port connection) :element-type 'character))
