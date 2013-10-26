@@ -42,12 +42,12 @@
                                                      (list k (append (getf dispatchers k) v)))
                                                  xep-dispatchers)))
            (first-xep-dep       (find-first-dep xep-deps xeps-list))
-           (reordered-xeps-list (remove-if #'(lambda (x) (equalp x first-xep-dep)) xeps-list)))
+           (reordered-xeps-list (cons xep (remove-if #'(lambda (x) (equalp x first-xep-dep)) xeps-list))))
       (if (null xeps-list)
           ret-dispatchers
           (if (or (null xep-deps) (null first-xep-dep))
               (build-stanzas-dispatchers% (car xeps-list) (cdr xeps-list) ret-dispatchers)
-              (build-stanzas-dispatchers% first-xep-dep (cons xep reordered-xeps-list) dispatchers))))))
+              (build-stanzas-dispatchers% first-xep-dep reordered-xeps-list dispatchers))))))
 
 
 (defclass xep ()
@@ -56,7 +56,7 @@
    (author      :accessor author      :initarg :author      :initform "")
    (description :accessor description :initarg :description :initform "")
    (depends-on  :accessor depends-on  :initarg :depends-on  :initform nil) 
-  (dispatchers :accessor dispatchers :initarg :dispatchers :initform nil)))
+   (dispatchers :accessor dispatchers :initarg :dispatchers :initform nil)))
 
 (defmethod print-object ((obj xep) stream)
   (print-unreadable-object (obj stream :type t :identity t)
