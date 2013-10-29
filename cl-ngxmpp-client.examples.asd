@@ -13,5 +13,6 @@
   :license "Lisp-LGPL"
   :depends-on (:cl-ngxmpp-client)
   :components ((:module "examples"
-                        :components ((:file "echo-bot"))
+                        :components ((:file "echo-bot")
+                                     (:file "groupchat-bot"))
                         :pathname "client/examples")))

@@ -27,6 +27,7 @@
            #:handle-stanza
            #:xep-exists-p
            #:concat-symbols
+           #:use-xeps
            ;; Classes
            #:connection
            #:xml-stream
@@ -40,9 +41,12 @@
            #:iq-set-bind-stanza
            #:iq-set-session-stanza
            #:presence-stanza
+           #:presence-subscribe-stanza
+           #:presence-show-stanza
            ;; Conditions
            #:handle-stanza-condition
            #:negotiate-sasl-condition))
+
 
 (defpackage #:cl-ngxmpp-client
   (:use #:cl)

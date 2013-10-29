@@ -20,6 +20,18 @@
        (let ((,stanza-input (xml-to-stanza (make-instance 'stanza :xml-node ,xml-input))))
          ,@body))))
 
+(defun get-element-by-name (node el-name)
+  (loop :for el :across (dom:child-nodes node)
+     :do (when (equal (dom:node-name el) el-name)
+           (return el))))
+
+(defun get-element-data (node)
+  (let ((child (dom:first-child node)))
+    (if (null child)
+        ""
+        (dom:data child))))
+    
+
 ;; Just an idea
 ;;(defmacro with-string-case ((needle ???) &body cases)
 ;;  `(string-case ,needle
@@ -28,10 +40,20 @@
 
 (defvar *stanzas-dispatchers* nil)
 
-(defun dispatch-stanza (stanza stanza-class)
-  ;; TODO: implement
-  t)
-
+(defun dispatch-stanza (stanza super-stanza-class)
+  (let ((dispatchers (getf *stanzas-dispatchers*
+                           (string-to-keyword (symbol-name super-stanza-class)))))
+    (labels ((dispatch (disp-list)
+               (if (null disp-list)
+                   (make-instance 'unknown-stanza :xml-node (xml-node stanza))
+                   (let* ((current (car disp-list))
+                          (target-stanza-class (first current))
+                          (target-dispatcher   (second current)))
+                     (if (funcall target-dispatcher stanza)
+                         (make-stanza stanza target-stanza-class)
+                         (dispatch (cdr disp-list)))))))
+      (dispatch dispatchers))))
+    
 (defgeneric make-stanza (stanza class-name)
   (:documentation
    "This method makes new instance of `class-name' stanza,
@@ -155,7 +177,7 @@ This class describes <stream:stream/> - XML entity which RFC 6120 calls `stream'
     (string-case child-qname
       ("stream:features" (make-stanza stanza 'stream-features-stanza))
       ("stream:error"    (make-stanza stanza 'stream-error-stanza))
-      (:default          (dispatch-stanza child-qname 'stream-stanza)))))
+      (:default          (dispatch-stanza stanza 'stream-stanza)))))
 
 (defmethod stanza-to-xml ((stanza stream-stanza))
   (cxml:with-element "stream:stream"
@@ -258,17 +280,12 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
          (message-node (dom:first-child xml-node))
          (to           (dom:get-attribute message-node "to"))
          (from         (dom:get-attribute message-node "from"))
-         (body         (dom:data
-                        (dom:first-child
-                         (loop for el across (dom:child-nodes (dom:first-child (xml-node stanza)))
-                            do (when (equal (dom:node-name el) "body")
-                                 (return el)))))))
+         (body         (get-element-data (get-element-by-name message-node "body"))))
     (setf (to stanza) to
           (from stanza) from
           (body stanza) body)
     stanza))
     
-
 (defclass* message-error-stanza (message-stanza)
   ())
 
@@ -280,6 +297,10 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     :accessor presence-type
     :initarg :presence-type
     :initform nil)
+   (id
+    :accessor id
+    :initarg :id
+    :initform "")
    (to
     :accessor to
     :initarg :to
@@ -287,42 +308,83 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
    (from
     :accessor from
     :initarg :from
-    :initform nil)
-   (show
-    :accessor show
-    :initarg :show
     :initform nil)))
 
-(defmethod xml-to-stanza ((stanza presence-stanza))
+(defmacro with-presence-stanza ((presence-stanza) &body body)
+  `(cxml:with-element "presence"
+     (unless (null (to ,presence-stanza))
+       (cxml:attribute "to"   (to ,presence-stanza)))
+     (unless (null (from ,presence-stanza))
+       (cxml:attribute "from" (from ,presence-stanza)))
+     (unless (null (presence-type ,presence-stanza))
+       (cxml:attribute "type" (presence-type ,presence-stanza)))
+     ,@body))
+
+(defmethod stanza-to-xml ((stanza presence-stanza))
+  (with-presence-stanza (stanza)))
+
+(defmethod make-stanza ((stanza presence-stanza) class-name)
   (let* ((xml-node      (xml-node stanza))
          (presence-node (dom:first-child xml-node))
+         (presence-type (dom:get-attribute presence-node "type"))
          (to            (dom:get-attribute presence-node "to"))
-         (from          (dom:get-attribute presence-node "from"))
-         (show          (dom:data ;; TODO: write function
-                         (dom:first-child
-                          (loop for el across (dom:child-nodes (dom:first-child (xml-node stanza)))
-                             do (when (equal (dom:node-name el) "show")
-                                  (return el)))))))
-    (setf (to stanza) to
-          (from stanza) from
-          (show stanza) show)
+         (from          (dom:get-attribute presence-node "from")))
+    (xml-to-stanza (make-instance class-name
+                                  :xml-node xml-node
+                                  :to to
+                                  :from from
+                                  :presence-type presence-type))))
+                                  
+(defmethod xml-to-stanza ((stanza presence-stanza))
+  (let* ((xml-node      (xml-node stanza))
+         (presence-type (dom:get-attribute (dom:first-child xml-node) "type")))
+    (string-case presence-type
+      ("subscribe" (make-stanza stanza 'presence-subscribe-stanza))
+      ("error"     (make-stanza stanza 'presence-error-stanza))
+      (:default
+          (let ((show (get-element-by-name (dom:first-child (xml-node stanza)) "show")))
+            (if show
+                (make-stanza stanza 'presence-show-stanza)
+                (dispatch-stanza stanza 'presence-stanza)))))))
+
+
+(defclass* presence-show-stanza (presence-stanza)
+  ((show :accessor show :initarg :show :initform "")))
+
+(defmethod xml-to-stanza ((stanza presence-show-stanza))
+  (let* ((xml-node  (xml-node stanza))
+         (show      (get-element-data (get-element-by-name (dom:first-child xml-node) "show"))))
+    (setf (show stanza) show)
     stanza))
-    
-(defmethod stanza-to-xml ((stanza presence-stanza))
-  (cxml:with-element "presence"
-    (unless (null (to stanza))
-      (cxml:attribute "to"   (to stanza)))
-    (unless (null (from stanza))
-      (cxml:attribute "from" (from stanza)))
+
+(defmethod stanza-to-xml ((stanza presence-show-stanza))
+  (with-presence-stanza (stanza)
     (cxml:with-element "show"
       (cxml:text (show stanza)))))
 
-;; 
-;; TODO: add presence-show-stanza, presence-subscribe-stanza, etc.
-;;
+
+(defclass* presence-subscribe-stanza (presence-stanza)
+  ((status :accessor status :initarg :status :initform "")))
+
+(defmethod xml-to-stanza ((stanza presence-subscribe-stanza))
+  (let* ((xml-node (xml-node stanza))
+         (status   (get-element-data
+                    (get-element-by-name (dom:first-child xml-node) "status"))))
+    (setf (status stanza) status)
+    stanza))
+
+(defmethod stanza-to-xml ((stanza presence-subscribe-stanza))
+  (with-presence-stanza (stanza)
+    (cxml:with-element "status"
+      (cxml:text (status stanza)))))
+
 
 (defclass* presence-error-stanza (presence-stanza)
   ())
+
+(defmethod xml-to-stanza ((stanza presence-error-stanza))
+  stanza)
+
 
 ;;
 ;; IQ stanzas
@@ -348,9 +410,9 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 (defmacro with-iq-stanza ((iq-stanza) &body body)
   `(cxml:with-element "iq"
     (cxml:attribute "id" (id ,iq-stanza))
-    (unless (null (to stanza))
+    (unless (null (to ,iq-stanza))
       (cxml:attribute "to" (to ,iq-stanza)))
-    (unless (null (from stanza))
+    (unless (null (from ,iq-stanza))
       (cxml:attribute "from" (from ,iq-stanza)))
     ,@body))
 
@@ -370,7 +432,8 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     (string-case iq-type
       ("result" (make-stanza stanza 'iq-result-stanza))
       ("error"  (make-stanza stanza 'iq-error-stanza))
-      ("get"    (make-stanza stanza 'iq-get-stanza)))))
+      ("get"    (make-stanza stanza 'iq-get-stanza))
+      (:default (dispatch-stanza stanza 'iq-stanza)))))
       
 
 (defclass* iq-get-stanza (iq-stanza) ())

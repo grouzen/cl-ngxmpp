@@ -85,7 +85,7 @@
                                                :mechanism mechanism)
                      (%bind% client)
                      (%session% client)
-                     (send-presence client :show "online")
+                     (send-presence-show client :show "online")
                      (proceed-stanza client))
           (skip-sasl () nil)
           (skip-handle-stanza () nil))))))
@@ -128,11 +128,15 @@
                      :to   to
                      :body body))))
 
-(defmethod send-presence ((client client) &key to from show)
+(defmethod send-presence-subscribe ((client client) &key to from status)
   (let ((xml-stream (xml-stream client)))
     (cl-ngxmpp:with-stanza-output (xml-stream)
-      (make-instance 'cl-ngxmpp:presence-stanza
-                     :to to
-                     :from from
-                     :show show))))
+      (make-instance 'cl-ngxmpp:presence-subscribe-stanza
+                     :to to :from from :status status))))
+
+(defmethod send-presence-show ((client client) &key to from show)
+  (let ((xml-stream (xml-stream client)))
+    (cl-ngxmpp:with-stanza-output (xml-stream)
+      (make-instance 'cl-ngxmpp:presence-show-stanza
+                     :to to :from from :show show))))
 

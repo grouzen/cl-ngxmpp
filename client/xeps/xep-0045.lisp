@@ -7,17 +7,20 @@
 
 (in-package #:cl-ngxmpp-client)
 
-(define-methods-with-xep (muc)
+(define-methods-with-xep (multi-user-chat)
 
-  ((send-message ((client client) &key to body)
-       (send-message client :to to :body))
+  ((send-presence-join ((client client) &key conference nickname)
+     (let ((xml-stream (xml-stream client))
+           (to         (format nil "~A/~A" conference nickname))
+           (from       (jid client)))
+       (cl-ngxmpp:with-stanza-output (xml-stream)
+         (make-instance-with-xep (multi-user-chat)
+             'presence-join-stanza :to to :from from))))
 
-   (send-invite ((client client) &key to)
-       ())))
-
-;;
-;; Example, how to call send methods from xep
-;; (call-methods-with-xep (muc)
-;;   ((send-message client :to to :body body)
-;;    (send-invite  clinet :to to)))
-;;
+   (send-presence-exit ((client client) &key conference nickname)
+     (let ((to   (format nil "~A/~A" conference nickname))
+           (from (jid client)))
+       (cl-ngxmpp:with-stanza-output ((xml-stream client))
+         (make-instance-with-xep (multi-user-chat)
+             'presence-exit-stanza :presence-type "unavailable" :to to :from from))))))
+             

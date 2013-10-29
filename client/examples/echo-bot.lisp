@@ -17,12 +17,18 @@
 (define-stanza-handler ((stanza stanza))
   (write-line "Default handler."))
 
-(define-stanza-handler ((stanza presence-stanza))
+(define-stanza-handler ((stanza presence-show-stanza))
   (let ((from (cl-ngxmpp:from stanza))
         (to   (cl-ngxmpp:to stanza))
         (show (cl-ngxmpp:show stanza)))
     (write-line (format nil "Presence ~A -> ~A: ~A" from to show))))
 
+(define-stanza-handler ((stanza presence-subscribe-stanza))
+  (let ((from   (cl-ngxmpp:from stanza))
+        (status (cl-ngxmpp:status stanza)))
+    (write-line (format nil "Presence ~A wants to subscribe to you, with status ~A"
+                        from status))))
+          
 (define-stanza-handler ((stanza iq-get-stanza))
   (let ((from (cl-ngxmpp:from stanza))
         (to   (cl-ngxmpp:to   stanza))
@@ -44,7 +50,7 @@
     (write-line (format nil "~A -> ~A: ~A" from to body))
     (cl-ngxmpp-client:send-message *client*
                   :to from
-                  :body (format nil "Are you talking to me? Are you talking to me?! Walk on home boy!"))))
+                  :body (format nil ">> ~A" body))))
 
 (defun run (&key server-hostname username password mechanism to body)
   (unless (null *client*)

@@ -18,12 +18,12 @@
   (getf *xeps-list* (string-to-keyword xep-name)))
 
 (defun xep-exists-p (xep-name)
-  (null (get-xep xep-name)))
+  (get-xep xep-name))
 
-(defun use-xeps (&rest names)
-  (setf *stanzas-dispatchers* (build-stanzas-dispatchers% (car names) (cdr names) nil)))
+(defun use-xeps (names)
+  (setf *stanzas-dispatchers* (build-stanzas-dispatchers% names nil)))
   
-(defun build-stanzas-dispatchers% (xep xeps-list dispatchers)
+(defun build-stanzas-dispatchers% (xeps-list dispatchers)
   (labels ((find-first-dep (deps-list xeps-list)
              (when deps-list
                (let ((dep (car deps-list)))
@@ -34,20 +34,21 @@
              (when lyst
                (cons (funcall fn (car lyst) (cadr lyst))
                      (mapcddr fn (cddr lyst))))))
-    (let* ((xep-obj             (get-xep xep))
-           (xep-deps            (mapcar #'(lambda (d) (string-downcase (symbol-name d))) (depends-on xep-obj)))
-           (xep-dispatchers     (dispatchers xep-obj))
-           (ret-dispatchers     (reduce #'append
-                                        (mapcddr #'(lambda (k v)
-                                                     (list k (append (getf dispatchers k) v)))
-                                                 xep-dispatchers)))
-           (first-xep-dep       (find-first-dep xep-deps xeps-list))
-           (reordered-xeps-list (cons xep (remove-if #'(lambda (x) (equalp x first-xep-dep)) xeps-list))))
-      (if (null xeps-list)
-          ret-dispatchers
+    (if (null xeps-list)
+        dispatchers
+        (let* ((xep                 (car xeps-list))
+               (xep-obj             (get-xep xep))
+               (xep-deps            (mapcar #'(lambda (d) (string-downcase (symbol-name d))) (depends-on xep-obj)))
+               (xep-dispatchers     (dispatchers xep-obj))
+               (ret-dispatchers     (reduce #'append
+                                            (mapcddr #'(lambda (k v)
+                                                         (list k (append (getf dispatchers k) v)))
+                                                     xep-dispatchers)))
+               (first-xep-dep       (find-first-dep xep-deps (cdr xeps-list)))
+               (reordered-xeps-list (cons first-xep-dep (remove-if #'(lambda (x) (equalp x first-xep-dep)) xeps-list))))
           (if (or (null xep-deps) (null first-xep-dep))
-              (build-stanzas-dispatchers% (car xeps-list) (cdr xeps-list) ret-dispatchers)
-              (build-stanzas-dispatchers% first-xep-dep reordered-xeps-list dispatchers))))))
+              (build-stanzas-dispatchers% (cdr xeps-list) ret-dispatchers)
+              (build-stanzas-dispatchers% reordered-xeps-list dispatchers))))))
 
 
 (defclass xep ()
@@ -150,15 +151,17 @@
          (dispatcher    (getf helpers :dispatcher))
          (definitions   nil))
     ;; Stanza class definition
-    (push `(defclass ,stanza-name (,@super-classes) ,slots) definitions)
+    (push `(defclass* ,stanza-name (,@super-classes) ,slots) definitions)
     ;; Methods for stanza: stanza-to-xml, xml-to-stanza, make-stanza
+    (print methods)
     (when methods
       (mapcar #'(lambda (method)
-                  (let* ((method-name     (concat-symbols `,xep-name '- (car method)))
+                  (let* ((method-name     (car method))
                          (method-args     (second method))
                          (method-obj-arg  (list (first method-args) stanza-name))
                          (method-rest-arg (cdr method-args))
                          (method-body     (third method)))
+                    (print method-name) (print method-obj-arg) (print method-rest-arg) (print method-body)
                     (push `(defmethod ,method-name ((,@method-obj-arg) ,@method-rest-arg) ,method-body) definitions)))
               methods))
     ;; Optional one macro for stanza: with-<stanza>
@@ -183,7 +186,7 @@
         (push
          `(with-xep (,xep-name)
             (loop :for super-class :in '(,@super-classes)
-               :do (push '(,stanza-name #'(lambda (,@dispatcher-arg) ,@dispatcher-body))
+               :do (push (list ',stanza-name #'(lambda (,@dispatcher-arg) ,@dispatcher-body))
                          (getf (dispatchers ,xep-name) (string-to-keyword (symbol-name super-class))))))
          definitions)))
     (setf definitions (reverse definitions))

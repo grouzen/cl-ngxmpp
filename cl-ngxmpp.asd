@@ -22,5 +22,6 @@
                (:file "sasl-negotiation")
                (:module "xeps"
                         :serial t
-                        :components ((:file "xeps")))))
+                        :components ((:file "xeps")
+                                     (:file "xep-0045")))))
                                      

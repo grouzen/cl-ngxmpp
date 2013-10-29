@@ -64,8 +64,14 @@
                    ,@body))
              (getf *xeps-methods* ,xep-name-keyword)))))
 
+(defmacro make-instance-with-xep ((xep-name) stanza-class &body body)
+  (let ((namespace-stanza-class
+         (find-symbol (symbol-name (cl-ngxmpp:concat-symbols `,xep-name '- (second stanza-class)))
+                      'cl-ngxmpp)))
+    `(make-instance ',namespace-stanza-class ,@body)))
+
 (defun use-xeps (&rest names)
-  ;; TODO: call cl-ngxmpp:use-xeps first.
+  (cl-ngxmpp:use-xeps names)
   (loop
      :for name :in names
      :do (let ((xep-methods (getf *xeps-methods* (cl-ngxmpp:string-to-keyword name))))
@@ -73,7 +79,4 @@
            (when (and (cl-ngxmpp:xep-exists-p name) xep-methods)
              (loop
                 :for method-closure :in xep-methods
-                :do (progn
-                      ;; TODO: add stanzas' dispatchers to *stanzas-dispathers* list.
-                      ;;       For doing this just call cl-ngxmpp:use-xep.
-                      (funcall method-closure)))))))
+                :do (funcall method-closure))))))
