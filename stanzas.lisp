@@ -20,6 +20,13 @@
        (let ((,stanza-input (xml-to-stanza (make-instance 'stanza :xml-node ,xml-input))))
          ,@body))))
 
+(defun get-elements-by-name (node el-name)
+  (let ((elems nil))
+    (loop :for el :across (dom:child-nodes node)
+       :do (when (equal (dom:node-name el) el-name)
+             (push el elems)))
+    elems))
+
 (defun get-element-by-name (node el-name)
   (loop :for el :across (dom:child-nodes node)
      :do (when (equal (dom:node-name el) el-name)

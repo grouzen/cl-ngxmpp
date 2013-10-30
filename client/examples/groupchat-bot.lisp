@@ -18,12 +18,15 @@
 
 (define-stanza-handler ((stanza presence-user-stanza) :xep multi-user-chat)
   (let ((affiliation (cl-ngxmpp:affiliation stanza))
-        (role       (cl-ngxmpp:role stanza))
-        (from       (cl-ngxmpp:from stanza))
-        (to         (cl-ngxmpp:to   stanza)))
+        (role        (cl-ngxmpp:role stanza))
+        (from        (cl-ngxmpp:from stanza))
+        (to          (cl-ngxmpp:to   stanza)))
     (write-line (format nil "MUC User presence: ~A -> ~A, affil: ~A, role: ~A"
                         from to affiliation role))))
-        
+
+(define-stanza-handler ((stanza presence-user-self-stanza) :xep multi-user-chat)
+  (write-line (format nil "MUC user self presence, roster ends: ~A" (cl-ngxmpp:statuses stanza))))
+     
 (defun connect (&key server-hostname username password)
   (unless (null *client*)
     (cl-ngxmpp-client:disconnect *client*))
