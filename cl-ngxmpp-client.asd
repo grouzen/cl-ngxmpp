@@ -7,15 +7,18 @@
 
 (in-package #:cl-user)
 
-(defpackage #:cl-ngxmpp-client-system
-  (:use #:cl #:asdf))
-
-(in-package #:cl-ngxmpp-client-system)
-
-(defsystem cl-ngxmpp-client
+(asdf:defsystem cl-ngxmpp-client
   :name "cl-ngxmpp-client"
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
-  :license "MIT"
+  :license "Lisp-LGPL"
   :depends-on (:cl-ngxmpp)
-  :components ((:file "client")))
+  :serial t
+  :components ((:module "client"
+                        :serial t
+                        :components ((:file "client")
+                                     (:module "xeps"
+                                              :components ((:file "xeps")
+                                                           (:file "xep-0045"))
+                                              :serial t)))))
+
 

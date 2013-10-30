@@ -19,8 +19,48 @@
     `(with-stream-xml-input (,xml-stream ,xml-input)
        (let ((,stanza-input (xml-to-stanza (make-instance 'stanza :xml-node ,xml-input))))
          ,@body))))
+
+(defun get-elements-by-name (node el-name)
+  (let ((elems nil))
+    (loop :for el :across (dom:child-nodes node)
+       :do (when (equal (dom:node-name el) el-name)
+             (push el elems)))
+    elems))
+
+(defun get-element-by-name (node el-name)
+  (loop :for el :across (dom:child-nodes node)
+     :do (when (equal (dom:node-name el) el-name)
+           (return el))))
+
+(defun get-element-data (node)
+  (let ((child (dom:first-child node)))
+    (if (null child)
+        ""
+        (dom:data child))))
     
 
+;; Just an idea
+;;(defmacro with-string-case ((needle ???) &body cases)
+;;  `(string-case ,needle
+;;     ,@cases
+;;     (:default (dispatch-stanza ???)))
+
+(defvar *stanzas-dispatchers* nil)
+
+(defun dispatch-stanza (stanza super-stanza-class)
+  (let ((dispatchers (getf *stanzas-dispatchers*
+                           (string-to-keyword (symbol-name super-stanza-class)))))
+    (labels ((dispatch (disp-list)
+               (if (null disp-list)
+                   (make-instance 'unknown-stanza :xml-node (xml-node stanza))
+                   (let* ((current (car disp-list))
+                          (target-stanza-class (first current))
+                          (target-dispatcher   (second current)))
+                     (if (funcall target-dispatcher stanza)
+                         (make-stanza stanza target-stanza-class)
+                         (dispatch (cdr disp-list)))))))
+      (dispatch dispatchers))))
+    
 (defgeneric make-stanza (stanza class-name)
   (:documentation
    "This method makes new instance of `class-name' stanza,
@@ -47,7 +87,7 @@ needs to be implemented only for parental classes"))
 ;;
 ;; TODO: export children of stanza class from cl-ngxmpp package.
 ;;
-(defclass stanza ()
+(defclass* stanza ()
   ((xml-node
     :accessor xml-node
     :initarg :xml-node
@@ -72,7 +112,7 @@ needs to be implemented only for parental classes"))
       ("challenge"       (make-stanza stanza 'sasl-challenge-stanza))
       ("iq"              (make-stanza stanza 'iq-stanza))
       ("presence"        (make-stanza stanza 'presence-stanza))
-      (:default          (make-stanza stanza 'unknown-stanza)))))
+      (:default          (dispatch-stanza stanza 'stanza)))))
 
 
 (defclass unknown-stanza (stanza)
@@ -86,7 +126,7 @@ needs to be implemented only for parental classes"))
   stanza)
 
 
-(defclass stream-stanza (stanza)
+(defclass* stream-stanza (stanza)
   ((to
     :accessor to
     :initarg :to
@@ -143,7 +183,8 @@ This class describes <stream:stream/> - XML entity which RFC 6120 calls `stream'
          (child-qname (dom:node-name child)))
     (string-case child-qname
       ("stream:features" (make-stanza stanza 'stream-features-stanza))
-      ("stream:error"    (make-stanza stanza 'stream-error-stanza)))))
+      ("stream:error"    (make-stanza stanza 'stream-error-stanza))
+      (:default          (dispatch-stanza stanza 'stream-stanza)))))
 
 (defmethod stanza-to-xml ((stanza stream-stanza))
   (cxml:with-element "stream:stream"
@@ -154,7 +195,7 @@ This class describes <stream:stream/> - XML entity which RFC 6120 calls `stream'
     (cxml:attribute "version" (version stanza))))
 
 
-(defclass stream-features-stanza (stream-stanza)
+(defclass* stream-features-stanza (stream-stanza)
   ((features
    :accessor features
    :initarg :features
@@ -194,7 +235,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     stanza))
 
 
-(defclass stream-close-stanza (stream-stanza) ())
+(defclass* stream-close-stanza (stream-stanza) ())
 
 (defmethod xml-to-stanza ((stanza stream-close-stanza))
   stanza)
@@ -203,7 +244,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   (cxml:with-element "stream:stream"))
 
 
-(defclass stream-error-stanza (stream-stanza)
+(defclass* stream-error-stanza (stream-stanza)
   ((error-node
    :accessor error-node
    :initarg :error-node
@@ -212,7 +253,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 ;;
 ;; Message stanzas
 ;;
-(defclass message-stanza (stanza)
+(defclass* message-stanza (stanza)
   ((from
     :accessor from
     :initarg :from
@@ -220,6 +261,10 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
    (to
     :accessor to
     :initarg :to
+    :initform nil)
+   (message-type
+    :accessor message-type
+    :initarg :message-type
     :initform nil)
    (body
     :accessor body
@@ -232,6 +277,8 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
       (cxml:attribute "from" (from stanza)))
     (unless (null (to stanza))
       (cxml:attribute "to" (to stanza)))
+    (unless (null (message-type stanza))
+      (cxml:attribute "type" (message-type stanza)))
     (cxml:with-element "body"
       (cxml:text (body stanza)))))
 
@@ -240,56 +287,116 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
          (message-node (dom:first-child xml-node))
          (to           (dom:get-attribute message-node "to"))
          (from         (dom:get-attribute message-node "from"))
-         (body         (dom:data
-                        (dom:first-child
-                         (loop for el across (dom:child-nodes (dom:first-child (xml-node stanza)))
-                            do (when (equal (dom:node-name el) "body")
-                                 (return el)))))))
+         (body         (get-element-data (get-element-by-name message-node "body"))))
     (setf (to stanza) to
           (from stanza) from
           (body stanza) body)
     stanza))
     
-
-(defclass message-error-stanza (message-stanza)
+(defclass* message-error-stanza (message-stanza)
   ())
 
 ;;
 ;; Presence stanzas
 ;;
-(defclass presence-stanza (stanza)
-  ((to
+(defclass* presence-stanza (stanza)
+  ((presence-type
+    :accessor presence-type
+    :initarg :presence-type
+    :initform nil)
+   (id
+    :accessor id
+    :initarg :id
+    :initform "")
+   (to
     :accessor to
     :initarg :to
     :initform nil)
    (from
     :accessor from
     :initarg :from
-    :initform nil)
-   (show
-    :accessor show
-    :initarg :show
     :initform nil)))
 
-(defmethod xml-to-stanza ((stanza presence-stanza))
-  stanza)
+(defmacro with-presence-stanza ((presence-stanza) &body body)
+  `(cxml:with-element "presence"
+     (unless (null (to ,presence-stanza))
+       (cxml:attribute "to"   (to ,presence-stanza)))
+     (unless (null (from ,presence-stanza))
+       (cxml:attribute "from" (from ,presence-stanza)))
+     (unless (null (presence-type ,presence-stanza))
+       (cxml:attribute "type" (presence-type ,presence-stanza)))
+     ,@body))
 
 (defmethod stanza-to-xml ((stanza presence-stanza))
-  (cxml:with-element "presence"
-    (unless (null (to stanza))
-      (cxml:attribute "to"   (to stanza)))
-    (unless (null (from stanza))
-      (cxml:attribute "from" (from stanza)))
+  (with-presence-stanza (stanza)))
+
+(defmethod make-stanza ((stanza presence-stanza) class-name)
+  (let* ((xml-node      (xml-node stanza))
+         (presence-node (dom:first-child xml-node))
+         (presence-type (dom:get-attribute presence-node "type"))
+         (to            (dom:get-attribute presence-node "to"))
+         (from          (dom:get-attribute presence-node "from")))
+    (xml-to-stanza (make-instance class-name
+                                  :xml-node xml-node
+                                  :to to
+                                  :from from
+                                  :presence-type presence-type))))
+                                  
+(defmethod xml-to-stanza ((stanza presence-stanza))
+  (let* ((xml-node      (xml-node stanza))
+         (presence-type (dom:get-attribute (dom:first-child xml-node) "type")))
+    (string-case presence-type
+      ("subscribe" (make-stanza stanza 'presence-subscribe-stanza))
+      ("error"     (make-stanza stanza 'presence-error-stanza))
+      (:default
+          (let ((show (get-element-by-name (dom:first-child (xml-node stanza)) "show")))
+            (if show
+                (make-stanza stanza 'presence-show-stanza)
+                (dispatch-stanza stanza 'presence-stanza)))))))
+
+
+(defclass* presence-show-stanza (presence-stanza)
+  ((show :accessor show :initarg :show :initform "")))
+
+(defmethod xml-to-stanza ((stanza presence-show-stanza))
+  (let* ((xml-node  (xml-node stanza))
+         (show      (get-element-data (get-element-by-name (dom:first-child xml-node) "show"))))
+    (setf (show stanza) show)
+    stanza))
+
+(defmethod stanza-to-xml ((stanza presence-show-stanza))
+  (with-presence-stanza (stanza)
     (cxml:with-element "show"
       (cxml:text (show stanza)))))
 
-(defclass presence-error-stanza (presence-stanza)
+
+(defclass* presence-subscribe-stanza (presence-stanza)
+  ((status :accessor status :initarg :status :initform "")))
+
+(defmethod xml-to-stanza ((stanza presence-subscribe-stanza))
+  (let* ((xml-node (xml-node stanza))
+         (status   (get-element-data
+                    (get-element-by-name (dom:first-child xml-node) "status"))))
+    (setf (status stanza) status)
+    stanza))
+
+(defmethod stanza-to-xml ((stanza presence-subscribe-stanza))
+  (with-presence-stanza (stanza)
+    (cxml:with-element "status"
+      (cxml:text (status stanza)))))
+
+
+(defclass* presence-error-stanza (presence-stanza)
   ())
+
+(defmethod xml-to-stanza ((stanza presence-error-stanza))
+  stanza)
+
 
 ;;
 ;; IQ stanzas
 ;;
-(defclass iq-stanza (stanza)
+(defclass* iq-stanza (stanza)
   ((id
     :accessor id
     :initarg :id
@@ -310,9 +417,9 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 (defmacro with-iq-stanza ((iq-stanza) &body body)
   `(cxml:with-element "iq"
     (cxml:attribute "id" (id ,iq-stanza))
-    (unless (null (to stanza))
+    (unless (null (to ,iq-stanza))
       (cxml:attribute "to" (to ,iq-stanza)))
-    (unless (null (from stanza))
+    (unless (null (from ,iq-stanza))
       (cxml:attribute "from" (from ,iq-stanza)))
     ,@body))
 
@@ -332,15 +439,16 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     (string-case iq-type
       ("result" (make-stanza stanza 'iq-result-stanza))
       ("error"  (make-stanza stanza 'iq-error-stanza))
-      ("get"    (make-stanza stanza 'iq-get-stanza)))))
+      ("get"    (make-stanza stanza 'iq-get-stanza))
+      (:default (dispatch-stanza stanza 'iq-stanza)))))
       
 
-(defclass iq-get-stanza (iq-stanza) ())
+(defclass* iq-get-stanza (iq-stanza) ())
 
 (defmethod xml-to-stanza ((stanza iq-get-stanza))
   stanza)
 
-(defclass iq-set-stanza (iq-stanza) ())
+(defclass* iq-set-stanza (iq-stanza) ())
 
 (defmacro with-iq-set-stanza ((iq-set-stanza) &body body)
   `(with-iq-stanza (,iq-set-stanza)
@@ -348,7 +456,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
      ,@body))
                     
 
-(defclass iq-set-bind-stanza (iq-set-stanza)
+(defclass* iq-set-bind-stanza (iq-set-stanza)
   ((xmlns
     :reader xmlns
     :initform "urn:ietf:params:xml:ns:xmpp-bind")
@@ -366,7 +474,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
           (cxml:text (resource stanza)))))))
 
 
-(defclass iq-set-session-stanza (iq-set-stanza)
+(defclass* iq-set-session-stanza (iq-set-stanza)
   ((xmlns
     :reader xmlns
     :initform "urn:ietf:params:xml:ns:xmpp-session")))
@@ -377,13 +485,13 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
       (cxml:attribute "xmlns" (xmlns stanza)))))
 
 
-(defclass iq-result-stanza (iq-stanza) ())
+(defclass* iq-result-stanza (iq-stanza) ())
 
 (defmethod xml-to-stanza ((stanza iq-result-stanza))
   stanza)
 
 
-(defclass iq-error-stanza (iq-stanza) ())
+(defclass* iq-error-stanza (iq-stanza) ())
 
 (defmethod xml-to-stanza ((stanza iq-error-stanza))
   stanza)
@@ -392,7 +500,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 ;; TODO: move starttls, proceed, sasl, etc
 ;;       to corresponding files.
 ;;
-(defclass starttls-stanza (stanza)
+(defclass* starttls-stanza (stanza)
   ((xmlns
     :accessor xmlns
     :initarg :xmlns
@@ -406,14 +514,14 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   stanza)
 
 
-(defclass proceed-stanza (stanza)
+(defclass* proceed-stanza (stanza)
   ())
 
 (defmethod xml-to-stanza ((stanza proceed-stanza))
   stanza)
 
 
-(defclass sasl-stanza (stanza)
+(defclass* sasl-stanza (stanza)
   ((xmlns
     :reader xmlns
     :initarg :xmlns
@@ -426,7 +534,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     stanza))
 
 
-(defclass sasl-auth-stanza (sasl-stanza)
+(defclass* sasl-auth-stanza (sasl-stanza)
   ((mechanism
     :accessor mechanism
     :initarg :mechanism
@@ -444,7 +552,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
       (cxml:text (identity-string stanza)))))
 
 
-(defclass sasl-response-stanza (sasl-stanza)
+(defclass* sasl-response-stanza (sasl-stanza)
   ((identity-string
     :accessor identity-string
     :initarg :identity-string
@@ -456,7 +564,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     (unless (null (identity-string stanza))
       (cxml:text (identity-string stanza)))))
 
-(defclass sasl-challenge-stanza (sasl-stanza)
+(defclass* sasl-challenge-stanza (sasl-stanza)
   ((identity-string
     :accessor identity-string
     :initarg :identity-string
@@ -474,7 +582,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     stanza))
          
     
-(defclass failure-stanza (stanza)
+(defclass* failure-stanza (stanza)
   ((xmlns
     :accessor xmlns
     :initarg :xmlns
@@ -489,7 +597,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   stanza)
          
 
-(defclass success-stanza (stanza)
+(defclass* success-stanza (stanza)
   ((xmlns
     :accessor xmlns
     :initarg :xmlns

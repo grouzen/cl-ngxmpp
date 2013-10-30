@@ -7,20 +7,21 @@
 
 (in-package #:cl-user)
 
-(defpackage #:cl-ngxmpp-system
-  (:use #:cl #:asdf))
-
-(in-package #:cl-ngxmpp-system)
-
-(defsystem cl-ngxmpp
+(asdf:defsystem cl-ngxmpp
   :name "cl-ngxmpp"
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
-  :license "MIT"
+  :license "Lisp-LGPL"
   :depends-on (:usocket :cxml :babel :cl+ssl :cl-base64 :cl-sasl)
+  :serial t
   :components ((:file "package")
-               (:file "utils"            :depends-on ("package"))
-               (:file "connection"       :depends-on ("utils"))
-               (:file "xml-stream"       :depends-on ("connection"))
-               (:file "stanzas"          :depends-on ("xml-stream"))
-               (:file "tls-negotiation"  :depends-on ("stanzas"))
-               (:file "sasl-negotiation" :depends-on ("stanzas"))))
+               (:file "utils")
+               (:file "connection")
+               (:file "xml-stream")
+               (:file "stanzas")
+               (:file "tls-negotiation")
+               (:file "sasl-negotiation")
+               (:module "xeps"
+                        :serial t
+                        :components ((:file "xeps")
+                                     (:file "xep-0045")))))
+                                     

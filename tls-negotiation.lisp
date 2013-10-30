@@ -7,6 +7,8 @@
 
 (in-package #:cl-ngxmpp)
 
+(define-condition negotiate-tls-condition (simple-condition) ())
+
 (defmethod negotiate-tls ((xml-stream xml-stream))
   (send-tls-negotiation xml-stream)
   (receive-tls-negotiation xml-stream))
@@ -17,9 +19,13 @@
 
 (defmethod receive-tls-negotiation ((xml-stream xml-stream))
   (with-stanza-input (xml-stream stanza-input)
-    (cond ((typep stanza-input 'proceed-stanza) (proceed-tls-negotiation xml-stream))
-          ((typep stanza-input 'failure-stanza) t)
-          (t (error "Unexpected reply from TLS negotiation")))))
+    (cond ((typep stanza-input 'proceed-stanza)
+           (proceed-tls-negotiation xml-stream))
+          ((typep stanza-input 'failure-stanza)
+           (error 'negotiate-tls-condition
+                  :format-control "TLS negotiation failed"))
+          (t (error 'negotiate-tls-condition
+                    :format-control "Unexpected reply from TLS negotiation")))))
 
 (defmethod proceed-tls-negotiation ((xml-stream xml-stream))
   (let ((connection (connection xml-stream)))
