@@ -14,7 +14,52 @@
 
 (defvar *client* nil)
 
-(cl-ngxmpp-client:use-xeps "multi-user-chat")
+(cl-ngxmpp-client:use-xeps "delayed-delivery" "multi-user-chat")
+
+;;
+;; Standard set of handlers.
+;;
+(define-stanza-handler ((stanza stanza))
+  (write-line "Default handler."))
+
+(define-stanza-handler ((stanza presence-show-stanza))
+  (let ((from (cl-ngxmpp:from stanza))
+        (to   (cl-ngxmpp:to stanza))
+        (show (cl-ngxmpp:show stanza)))
+    (write-line (format nil "Presence ~A -> ~A: ~A" from to show))))
+
+(define-stanza-handler ((stanza presence-subscribe-stanza))
+  (let ((from   (cl-ngxmpp:from stanza))
+        (status (cl-ngxmpp:status stanza)))
+    (write-line (format nil "Presence ~A wants to subscribe to you, with status ~A"
+                        from status))))
+          
+(define-stanza-handler ((stanza iq-get-stanza))
+  (let ((from (cl-ngxmpp:from stanza))
+        (to   (cl-ngxmpp:to   stanza))
+        (id   (cl-ngxmpp:id   stanza))
+        (iq-type (cl-ngxmpp:iq-type stanza)))
+    (write-line (format nil "IQ ~A (~A) ~A -> ~A" id iq-type from to))))
+
+(define-stanza-handler ((stanza iq-result-stanza))
+  (let ((id (cl-ngxmpp:id stanza))
+        (iq-type (cl-ngxmpp:iq-type stanza))
+        (to (cl-ngxmpp:to stanza))
+        (from (cl-ngxmpp:from stanza)))
+    (write-line (format nil "IQ ~A (~A) ~A -> ~A" id iq-type from to))))
+
+;;
+;; XEP (Multi User Chat) related handlers.
+;;
+(define-stanza-handler ((stanza message-groupchat-stanza) :xep multi-user-chat)
+  (let ((body (cl-ngxmpp:body stanza))
+        (from (cl-ngxmpp:from stanza))
+        (to   (cl-ngxmpp:to   stanza)))
+    (write-line (format nil "MUC message: ~A -> ~A: ~A" from to body))))
+
+(define-stanza-handler ((stanza message-groupchat-stanza) :xep delayed-delivery)
+  (write-line (format nil "MUC delayed message: ~A: ~A"
+                      (cl-ngxmpp:stamp stanza) (cl-ngxmpp:delay-from stanza))))
 
 (define-stanza-handler ((stanza presence-user-stanza) :xep multi-user-chat)
   (let ((affiliation (cl-ngxmpp:affiliation stanza))
