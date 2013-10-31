@@ -254,7 +254,11 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 ;; Message stanzas
 ;;
 (defclass* message-stanza (stanza)
-  ((from
+  ((id
+    :accessor id
+    :initarg :id
+    :initform nil)
+   (from
     :accessor from
     :initarg :from
     :initform nil)
@@ -271,27 +275,49 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     :initarg :body
     :initform "")))
 
+(defmacro with-message-stanza ((message-stanza) &body body)
+  `(cxml:with-element "message"
+     (unless (null (from ,message-stanza))
+       (cxml:attribute "from" (from ,message-stanza)))
+     (unless (null (to ,message-stanza))
+       (cxml:attribute "to" (to ,message-stanza)))
+     (unless (null (message-type ,message-stanza))
+       (cxml:attribute "type" (message-type ,message-stanza)))
+     (cxml:with-element "body"
+       (cxml:text (body ,message-stanza)))
+     ,@body))
+
 (defmethod stanza-to-xml ((stanza message-stanza))
-  (cxml:with-element "message"
-    (unless (null (from stanza))
-      (cxml:attribute "from" (from stanza)))
-    (unless (null (to stanza))
-      (cxml:attribute "to" (to stanza)))
-    (unless (null (message-type stanza))
-      (cxml:attribute "type" (message-type stanza)))
-    (cxml:with-element "body"
-      (cxml:text (body stanza)))))
+  (with-message-stanza (stanza)))
+
+(defmethod make-stanza ((stanza message-stanza) class-name)
+  (let* ((message-node (dom:first-child (xml-node stanza)))
+         (to           (dom:get-attribute message-node "to"))
+         (from         (dom:get-attribute message-node "from"))
+         (message-type (dom:get-attribute message-node "message-type"))
+         (body         (get-element-data (get-element-by-name message-node "body"))))
+    (xml-to-stanza (make-instance class-name
+                                  :xml-node     (xml-node stanza)
+                                  :message-type message-type
+                                  :from         from
+                                  :to           to
+                                  :body         body))))
 
 (defmethod xml-to-stanza ((stanza message-stanza))
   (let* ((xml-node     (xml-node stanza))
          (message-node (dom:first-child xml-node))
          (to           (dom:get-attribute message-node "to"))
          (from         (dom:get-attribute message-node "from"))
-         (body         (get-element-data (get-element-by-name message-node "body"))))
-    (setf (to stanza) to
-          (from stanza) from
-          (body stanza) body)
-    stanza))
+         (body         (get-element-data (get-element-by-name message-node "body")))
+         (disp         (dispatch-stanza stanza 'message-stanza)))
+    (if (typep disp 'unknown-stanza)
+        (progn
+          (setf (to stanza) to
+                (from stanza) from
+                (body stanza) body)
+          stanza)
+        disp)))
+        
     
 (defclass* message-error-stanza (message-stanza)
   ())

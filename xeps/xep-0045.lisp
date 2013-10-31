@@ -11,7 +11,26 @@
                              :author "Nedokushev Michael <grouzen.hexy@gmail.com>"
                              :description "XEP 0045, Multi User Chat")
   
-  ((presence-join-stanza (presence-stanza)
+  ((message-groupchat-stanza (message-stanza)
+     ()
+
+     (:methods
+      ((xml-to-stanza (stanza)
+         (let ((disp (dispatch-stanza stanza 'multi-user-chat-message-groupchat-stanza)))
+           (if (typep disp 'unknown-stanza)
+               stanza
+               disp)))
+
+       (stanza-to-xml (stanza)
+         (with-message-stanza (stanza))))
+
+      :dispatcher ((stanza)
+        (let* ((message-node (dom:first-child (xml-node stanza)))
+               (message-type (dom:get-attribute message-node "type")))
+          (equalp message-type "groupchat")))))
+               
+
+   (presence-join-stanza (presence-stanza)
      ((x-xmlns :accessor x-xmlns :initarg :x-xmlns :initform "http://jabber.org/protocol/muc"))
      
      (:methods
@@ -20,6 +39,7 @@
            (cxml:with-element "x"
              (cxml:attribute "xmlns" (x-xmlns stanza))))))))
 
+   
    (presence-exit-stanza (presence-stanza)
      ()
      
@@ -30,7 +50,8 @@
    (presence-user-stanza (presence-stanza)
      ((x-xmlns     :accessor x-xmlns     :initarg :x-xmlns     :initform "http://jabber.org/protocol/muc#user")
       (affiliation :accessor affiliation :initarg :affiliation :initform "member")
-      (role        :accessor role        :initarg :role        :initform "participant"))
+      (role        :accessor role        :initarg :role        :initform "participant")
+      (jid         :accessor jid         :initarg :jid         :initform nil))
 
      (:methods
       ((xml-to-stanza (stanza)
@@ -67,6 +88,7 @@
           (unless (null x-node)
             (equalp (dom:get-attribute x-node "xmlns") "http://jabber.org/protocol/muc#user"))))))
 
+   
    (presence-user-self-stanza (multi-user-chat-presence-user-stanza)
      ((statuses :accessor statuses :initarg :statuses :initform nil))
 

@@ -23,5 +23,6 @@
                (:module "xeps"
                         :serial t
                         :components ((:file "xeps")
-                                     (:file "xep-0045")))))
-                                     
+                                     (:file "xep-0045")
+                                     (:file "xep-0203")))))
+

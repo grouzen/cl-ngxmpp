@@ -47,7 +47,6 @@
            #:handle-stanza-condition
            #:negotiate-sasl-condition))
 
-
 (defpackage #:cl-ngxmpp-client
   (:use #:cl)
   (:export #:disconnect
