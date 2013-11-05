@@ -52,11 +52,10 @@
       (affiliation :accessor affiliation :initarg :affiliation :initform "member")
       (role        :accessor role        :initarg :role        :initform "participant")
       (jid         :accessor jid         :initarg :jid         :initform nil))
-
+     
      (:methods
       ((xml-to-stanza (stanza)
-         (let* ((xml-node    (xml-node stanza))
-                (x-node      (get-element-by-name (dom:first-child xml-node) "x"))
+         (let* ((x-node      (get-x-node stanza))
                 (item-node   (get-element-by-name x-node "item"))
                 (affiliation (dom:get-attribute item-node "affiliation"))
                 (role        (dom:get-attribute item-node "role"))
@@ -69,9 +68,7 @@
                disp)))
 
        (make-stanza (stanza class-name)
-         (let* ((item-node   (get-element-by-name 
-                              (get-element-by-name (dom:first-child (xml-node stanza)) "x")
-                              "item"))
+         (let* ((item-node   (get-element-by-name (get-x-node stanza) "item"))
                 (affiliation (dom:get-attribute item-node "affiliation"))
                 (role        (dom:get-attribute item-node "role")))
            (xml-to-stanza (make-instance 'multi-user-chat-presence-user-self-stanza
@@ -80,14 +77,20 @@
                                          :from        (from stanza)
                                          :id          (id stanza)
                                          :affiliation affiliation
-                                         :role        role)))))
+                                         :role        role))))
+
+       ;; Helper for searhing "x" element with particular xmlns attr.
+       (get-x-node (stanza)
+         (let ((xs (remove-if #'(lambda (x-node)
+                                  (not (equalp (dom:get-attribute x-node "xmlns")
+                                               "http://jabber.org/protocol/muc#user")))
+                              (get-elements-by-name (dom:first-child (xml-node stanza)) "x"))))
+           (when xs
+             (car xs)))))
       
       :dispatcher ((stanza)
-        (let* ((presence-node (dom:first-child (xml-node stanza)))
-               (x-node        (get-element-by-name presence-node "x")))
-          (unless (null x-node)
-            (equalp (dom:get-attribute x-node "xmlns") "http://jabber.org/protocol/muc#user"))))))
-
+        (get-x-node (make-instance 'multi-user-chat-presence-user-stanza
+                                   :xml-node (xml-node stanza))))))
    
    (presence-user-self-stanza (multi-user-chat-presence-user-stanza)
      ((statuses :accessor statuses :initarg :statuses :initform nil))
@@ -103,4 +106,3 @@
       :dispatcher ((stanza)
         (let ((x-node (get-element-by-name (dom:first-child (xml-node stanza)) "x")))
           (get-elements-by-name x-node "status")))))))
-
