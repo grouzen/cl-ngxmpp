@@ -70,4 +70,24 @@ a better way tell me, please."
                              (mapcar #'symbol-name symbols))))
     (declare (ignore keyword-status))
     keyword-name))
-                 
+
+#+nil
+(progn
+  (defun mapcddr (fn lyst)
+    (when lyst
+      (cons (funcall fn (car lyst) (cadr lyst))
+            (mapcddr fn (cddr lyst)))))
+
+  (defun make-cartesian-set (a b)
+    (reduce #'append
+            (mapcar #'(lambda (x)
+                        (mapcar #'(lambda (y)
+                                    (cons x y)) b))
+                    a)))
+
+  (defun intersect (a b)
+    (mapcar #'(lambda (x)
+                (car x))
+            (remove-if #'(lambda (x)
+                           (not (eq (car x) (cdr x))))
+                       (make-cartesian-set a b)))))
