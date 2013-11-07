@@ -19,21 +19,18 @@
     (format stream "~A ~A ~A" (id obj) (symbol-name (state obj)) (debuggable obj))))
 
 (defmethod write-to-stream ((xml-stream xml-stream) string)
-  (let ((socket-stream (socket-stream (connection xml-stream))))
-    (write-string string socket-stream)
-    (force-output socket-stream)
+  (cl-async-future:alet ((result (adapter-write-to-stream (adapter (connection xml-stream)) string)))
     (when (debuggable xml-stream)
       (write-line (format nil "Sent: ~A" string) *debug-io*)
       (force-output *debug-io*))))
 
-(defmethod read-from-stream ((xml-stream xml-stream))
-  (let* ((socket-stream (socket-stream (connection xml-stream)))
-         (result (result (stanza-reader-read-stream
-                          (make-instance 'stanza-reader :stanza-stream socket-stream)))))
-    (when (debuggable xml-stream)
-      (write-line (format nil "Received: ~A" result) *debug-io*)
-      (force-output *debug-io*))
-    result))
+(defmethod read-from-stream ((xml-stream xml-stream) &key (stanza-reader 'stanza-reader))
+  (future-value
+   (cl-async-future:alet ((result (adapter-read-from-stream (adapter (connection xml-stream)) :stanza-reader stanza-reader)))
+     (when (debuggable xml-stream)
+       (write-line (format nil "Received: ~A" result) *debug-io*)
+       (force-output *debug-io*))
+     result)))
 
 (defmethod openedp ((xml-stream xml-stream))
   (eq (state xml-stream) 'opened))
@@ -55,26 +52,23 @@
   t)
 
 (defmethod open-stream ((xml-stream xml-stream))
-  (let ((socket-stream (socket-stream (connection xml-stream))))
-    ;; Send <stream:stream> to initiate connection
-    (write-to-stream xml-stream
-                     (format nil "<?xml version='1.0'?><stream:stream to='~A' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>"
-                             (hostname (connection xml-stream))))
-    ;; Read <?xml?> header
-    (stanza-reader-read-stream (make-instance 'stanza-reader-header :stanza-stream socket-stream))
-    ;; Read <stream:stream> with features
-    (let* ((features-result
-            (format nil "~A</stream:stream>"
-                    (result (stanza-reader-read-stream
-                             (make-instance 'stanza-reader-features :stanza-stream socket-stream)))))
-           (features-result-xml (cxml:parse features-result (cxml-dom:make-dom-builder)))
-           (features-stanza (xml-to-stanza (make-instance 'stanza :xml-node features-result-xml))))
-      (setf (state xml-stream) 'opened)
-      (setf (features xml-stream) features-stanza)
-      (when (debuggable xml-stream)
-        (write-line (format nil "Received stream: ~A" features-result) *debug-io*)
-        (print features-stanza *debug-io*)
-        (force-output *debug-io*)))))
+  ;; Send <stream:stream> to initiate connection
+  (write-to-stream xml-stream
+                   (format nil "<?xml version='1.0'?><stream:stream to='~A' xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>"
+                           (hostname (connection xml-stream))))
+  ;; Read <?xml?> header
+  (read-from-stream xml-stream :stanza-reader 'stanza-reader-header)
+  ;; Read <stream:stream> with features
+  (let* ((features-result
+          (format nil "~A</stream:stream>" (read-from-stream xml-stream :stanza-reader 'stanza-reader-features)))
+         (features-result-xml (cxml:parse features-result (cxml-dom:make-dom-builder)))
+         (features-stanza (xml-to-stanza (make-instance 'stanza :xml-node features-result-xml))))
+    (setf (state xml-stream) 'opened)
+    (setf (features xml-stream) features-stanza)
+    (when (debuggable xml-stream)
+      (write-line (format nil "Received stream: ~A" features-result) *debug-io*)
+      (print features-stanza *debug-io*)
+      (force-output *debug-io*))))
              
 (defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
   `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
@@ -95,7 +89,7 @@
 ;; Most of code taken and ported from:
 ;; https://github.com/dmatveev/shampoo-emacs/blob/8302cc4e14653980c2027c98d84f9aa3d1b59ebb/shampoo.el#L400
 ;;
-(defclass stanza-reader ()
+(defclass* stanza-reader ()
   ((stanza-stream :accessor stanza-stream :initarg :stanza-stream :initform nil)
    (state         :accessor state         :initarg :state         :initform :init)
    (depth         :accessor depth         :initarg :depth         :initform 0)

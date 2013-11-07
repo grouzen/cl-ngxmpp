@@ -28,9 +28,9 @@
                     :format-control "Unexpected reply from TLS negotiation")))))
 
 (defmethod proceed-tls-negotiation ((xml-stream xml-stream))
-  (let ((connection (connection xml-stream)))
-    (setf (socket-stream connection)
-          (cl+ssl:make-ssl-client-stream
-           (socket-stream connection)
-           :external-format :utf-8))
-    (restart-stream xml-stream)))
+  (let ((adapter (adapter (connection xml-stream))))
+    (with-slots (socket-stream) adapter
+      (write-line "BEFORE MAKE-SSL-CLIENT-STREAM" *debug-io*)
+      (setf socket-stream (cl+ssl:make-ssl-client-stream socket-stream :external-format '(:utf-8 :eol-style :crlf)))
+      (write-line "AFTER MAKE-SSL-CLIENT-STREAM" *debug-io*)
+      (restart-stream xml-stream))))

@@ -15,6 +15,7 @@
    (server-port     :accessor server-port     :initarg :server-port     :initform cl-ngxmpp:*default-port*)
    (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)
    (session         :accessor session         :initarg :session         :initform nil)
+   (adapter         :accessor adapter         :initarg :adapter         :initform (make-instance 'cl-ngxmpp:usocket-adapter))
    (debuggable      :accessor debuggable      :initarg :debuggable      :initform t)))
 
 (defmethod jid ((client client))
@@ -45,8 +46,9 @@
 
 (defmethod connect ((client client))
   (let ((connection (make-instance 'cl-ngxmpp:connection
-                     :hostname (server-hostname client)
-                     :port     (server-port     client))))
+                                   :adapter  (adapter         client)
+                                   :hostname (server-hostname client)
+                                   :port     (server-port     client))))
     (when (cl-ngxmpp:connectedp (cl-ngxmpp:open-connection connection))
       (let ((xml-stream (make-instance 'cl-ngxmpp:xml-stream
                          :connection connection

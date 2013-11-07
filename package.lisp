@@ -28,9 +28,16 @@
            #:xep-exists-p
            #:concat-symbols
            #:use-xeps
+           #:stanza-reader-read-stream           
            ;; Classes
            #:connection
            #:xml-stream
+           #:stanza-reader
+           #:stanza-reader-header
+           #:stanza-reader-features
+           #:adapter
+           #:usocket-adapter
+           #:iolib-adapter
            ;; Stanzas
            #:stanza
            #:message-stanza
