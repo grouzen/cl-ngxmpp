@@ -104,6 +104,8 @@
        ,@body)))
 
 ;;
+;; XEP's declaration example:
+;; 
 ;; (define-xep (muc :order "0045"
 ;;                  :author "John McCarty"
 ;;                  :description "Multi User Chat"
@@ -130,6 +132,7 @@
 ;;     (iq-set-message-stanza (iq-set-stanza) ())))
 ;;     ...
 ;;
+;; TODO: verification and usefull errors messages.
 (defmacro define-xep ((xep-name &key order author description depends-on) &body body)
   (let* ((xep-name-string (string-downcase (symbol-name `,xep-name)))
          (xep-obj         (make-instance 'xep

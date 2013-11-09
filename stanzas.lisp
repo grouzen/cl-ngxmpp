@@ -76,6 +76,7 @@ needs to be implemented only for parental classes"))
   (:documentation
    "Returns xml object which is transformed further to string."))
 
+;; TODO: think about moving handle-stanza's stuff to cl-ngxmpp-client.
 (defgeneric handle-stanza (stanza)
   (:documentation
    "This handler must be overrided on client code."))

@@ -57,7 +57,6 @@
     (cl-ngxmpp-client:disconnect *client*))
   (setf *client* (make-instance 'cl-ngxmpp-client:client
                                 :server-hostname server-hostname))
-                                ;:adapter (make-instance 'cl-ngxmpp:iolib-adapter)))
   (cl-ngxmpp-client:connect *client*)
   (cl-ngxmpp-client:authorize *client* :username username :password password :mechanism mechanism)
   (cl-ngxmpp-client:send-message *client* :to to :body body)

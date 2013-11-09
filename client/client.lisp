@@ -109,6 +109,11 @@
                      :id "sess"))
     (proceed-stanza client)))
 
+;;
+;; Blocking I/O methods, usefull for bots.
+;; These methods call `cl-ngxmpp:handle-stanza' callback
+;; after receiving a message from network.
+;;
 (defmethod proceed-stanza-loop ((client client))
   (let ((xml-stream (xml-stream client)))
     (handler-case
@@ -122,6 +127,21 @@
     (cl-ngxmpp:with-stanza-input (xml-stream stanza)
       (cl-ngxmpp:handle-stanza stanza))))
 
+;;
+;; Method just receives an any stanza from network
+;; and returns it. User can do anything with result
+;; of these method (i.e call handle-stanza).
+;; It's usefull for event-loop.
+;;
+(defmethod read-stanza ((client client))
+  (with-slots (xml-stream) client
+    (cl-ngxmpp:with-stanza-input (xml-stream stanza)
+      stanza)))
+
+;;
+;; Methods for sending stanzas from core RFC.
+;; For the rest of send-* methods, see client/xeps/xep-XXXX.lisp files.
+;;
 (defmethod send-message ((client client) &key to body)
   (let ((xml-stream (xml-stream client)))
     (cl-ngxmpp:with-stanza-output (xml-stream)

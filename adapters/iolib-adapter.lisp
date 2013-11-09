@@ -19,8 +19,8 @@
                                                   :type :stream
                                                   :external-format '(:utf-8 :eol-style :crlf))))
     (iolib.sockets:connect socket-stream
-                             (iolib.sockets:lookup-hostname hostname)
-                             :port port)
+                           (iolib.sockets:lookup-hostname hostname)
+                           :port port)
     (setf (socket-stream adapter) socket-stream
           (event-base    adapter) (make-instance 'iolib.multiplex:event-base
                                                  :exit-when-empty t))))
