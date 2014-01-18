@@ -5,6 +5,16 @@
 ;;;;
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
+
+;; 
+;; Actually this adapter doesn't work because of problem
+;; with underlying fd which is returned from cl+ssl:make-ssl-client-stream
+;; function. Discussion about this issue you can find on this url:
+;; http://www.reddit.com/r/lisp/comments/1q3kvs/clssl_and_iolib_problem/
+;;
+;; But anyway I think problem can be solved somehow ;).
+;;
+
 (in-package #:cl-ngxmpp)
 
 (defparameter *timeout* 5)

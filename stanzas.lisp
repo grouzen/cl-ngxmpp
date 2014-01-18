@@ -121,7 +121,7 @@ needs to be implemented only for parental classes"))
 
 (defmethod print-object ((obj unknown-stanza) stream)
   (print-unreadable-object (obj stream :type t :identity t)
-    (format "Unknown type of stanza: ~A" (dom:node-name (dom:first-child (xml-node obj))))))
+    (format stream "Unknown type of stanza: ~A" (dom:node-name (dom:first-child (xml-node obj))))))
         
 (defmethod xml-to-stanza ((stanza unknown-stanza))
   stanza)
@@ -275,6 +275,12 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     :accessor body
     :initarg :body
     :initform "")))
+
+(defmethod print-object ((obj message-stanza) stream)
+  (with-slots (from to body) obj
+    (print-unreadable-object (obj stream :type t :identity t)
+      (format stream "from: ~A, to: ~A, body: ~A"
+              from to body))))
 
 (defmacro with-message-stanza ((message-stanza) &body body)
   `(cxml:with-element "message"

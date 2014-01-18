@@ -62,6 +62,7 @@
            #:send-presence
            #:proceed-stanza
            #:proceed-stanza-loop
+           #:read-stanza
            #:connect
            #:define-stanza-handler
            #:call-methods-with-xep
