@@ -5,18 +5,18 @@
 ;;;;
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
-(in-package :cl-ngxmpp)
+(in-package #:cl-ngxmpp)
 
 (defvar *default-hostname* "localhost")
 
 (defvar *default-port* 5222)
 
 (defclass connection ()
-  ((hostname      :accessor hostname      :initarg :hostname      :initform *default-hostname*)
-   (port          :accessor port          :initarg :port          :initform *default-port*)
-   (socket        :accessor socket        :initarg :socket        :initform nil)
-   (socket-stream :accessor socket-stream :initarg :socket-stream :initform nil)))
-  
+  ((hostname :accessor hostname :initarg :hostname :initform *default-hostname*)
+   (port     :accessor port     :initarg :port     :initform *default-port*)
+   (adapter  :accessor adapter  :initarg :adapter  :initform nil)))
+
+#+nil
 (defmethod print-object ((obj connection) stream)
   "Just print a human readable representation of connection object."
   (print-unreadable-object (obj stream :type t :identity t)
@@ -29,22 +29,17 @@
 
 (defmethod connectedp ((connection connection))
   "Returns t if `connection' is connected to a server."
-  (let ((stream (socket-stream connection)))
-    (and (streamp stream)
-         (open-stream-p stream))))
+  (adapter-connectedp (adapter connection)))
 
 (defmethod close-connection ((connection connection))
   "Close TCP connection."
-  (close (socket-stream connection))
+  (adapter-close-connection (adapter connection))
   connection)
 
 (defmethod open-connection ((connection connection))
   "Open TCP connection to port on hostname, create and open socket, and returns connection."
-  (let* ((socket (usocket:socket-connect
-                  (hostname connection) (port connection) :element-type 'character))
-         (stream (usocket:socket-stream socket)))
-      (setf (socket connection) socket)
-      (setf (socket-stream connection) stream)
-    connection))
-    
-    
+  (adapter-open-connection (adapter connection)
+                           (hostname connection)
+                           (port connection))
+  connection)
+

@@ -13,7 +13,7 @@
 ;;
 ;; Ordered list of SASL mechanisms.
 ;;
-(defconstant +sasl-mandatory-mechanisms+
+(defparameter *sasl-mandatory-mechanisms*
   '("DIGEST-MD5" "PLAIN"))
 
 (define-condition negotiate-sasl-condition (simple-condition) ())
@@ -36,7 +36,7 @@
 ;; TODO: improve algorithm, now it's so dumb.
 (defun %choose-mechanism% (mechanism)
   (if (null mechanism)
-      (car +sasl-mandatory-mechanisms+)
+      (car *sasl-mandatory-mechanisms*)
       mechanism))
 
 (defun %sasl-fail% (failure)

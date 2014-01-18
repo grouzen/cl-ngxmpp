@@ -71,6 +71,14 @@ a better way tell me, please."
     (declare (ignore keyword-status))
     keyword-name))
 
+(defun future-value (future)
+  (cond ((not (typep future 'cl-async-future::future)) future)
+        ((cl-async-future::future-finished future)
+         (first (cl-async-future::future-values future)))
+        (t (cl-async-future:wait-for future
+             (future-value future)))))
+
+
 #+nil
 (progn
   (defun mapcddr (fn lyst)
