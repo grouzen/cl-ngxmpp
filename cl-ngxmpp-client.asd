@@ -15,7 +15,8 @@
   :serial t
   :components ((:module "client"
                         :serial t
-                        :components ((:file "client")
+                        :components ((:file "package")
+                                     (:file "client")
                                      (:module "xeps"
                                               :components ((:file "xeps")
                                                            (:file "xep-0045"))

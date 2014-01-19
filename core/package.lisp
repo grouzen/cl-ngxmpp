@@ -53,19 +53,3 @@
            ;; Conditions
            #:handle-stanza-condition
            #:negotiate-sasl-condition))
-
-(defpackage #:cl-ngxmpp-client
-  (:use #:cl)
-  (:export #:disconnect
-           #:authorize
-           #:send-message
-           #:send-presence
-           #:proceed-stanza
-           #:proceed-stanza-loop
-           #:read-stanza
-           #:connect
-           #:define-stanza-handler
-           #:call-methods-with-xep
-           #:use-xeps
-           ;; Classes
-           #:client))

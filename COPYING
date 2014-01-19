@@ -1,6 +1,6 @@
 cl-ngxmpp - Common Lisp library for XMPP RFCs.
 
-Copyright (c) 2013 Nedokushev Michael
+Copyright (c) 2013, 2014 Nedokushev Michael
 
 Preamble to the Gnu Lesser General Public License
 

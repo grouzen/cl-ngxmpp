@@ -164,7 +164,6 @@
     ;; Stanza class definition
     (push `(defclass* ,stanza-name (,@super-classes) ,slots) definitions)
     ;; Methods for stanza: stanza-to-xml, xml-to-stanza, make-stanza
-    (print methods)
     (when methods
       (mapcar #'(lambda (method)
                   (let* ((method-name     (car method))
@@ -172,7 +171,6 @@
                          (method-obj-arg  (list (first method-args) stanza-name))
                          (method-rest-arg (cdr method-args))
                          (method-body     (third method)))
-                    (print method-name) (print method-obj-arg) (print method-rest-arg) (print method-body)
                     (push `(defmethod ,method-name ((,@method-obj-arg) ,@method-rest-arg) ,method-body) definitions)))
               methods))
     ;; Optional one macro for stanza: with-<stanza>
