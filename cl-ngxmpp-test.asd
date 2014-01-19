@@ -17,4 +17,5 @@
                         :serial t
                         :pathname "core/test"
                         :components ((:file "package")
-                                     (:file "stanzas-test")))))
+                                     (:file "stanzas-test")
+                                     (:file "xml-stream-test")))))

@@ -19,7 +19,16 @@
 
 (deftestsuite stanzas-xml-utils-test (stanzas-test)
   ((xml-node (string-to-xml-node
-              "<foo><bar2>dog</bar2><bar></bar><baz><cat>scary</cat></baz><bar><dog>cat</dog></bar></foo>"))))
+              "<foo>
+                 <bar2>dog</bar2>
+                 <bar></bar>
+                 <baz>
+                   <cat>scary</cat>
+                 </baz>
+                 <bar>
+                   <dog>cat</dog>
+                 </bar>
+               </foo>"))))
 
 (addtest (stanzas-xml-utils-test)
   get-element-by-name-does-not-exists
@@ -60,17 +69,18 @@
   ((xeps-list '("multi-user-chat" "delayed-delivery"))
    (groupchat-stanza-delayed
     (string-to-stanza 'cl-ngxmpp::multi-user-chat-message-groupchat-stanza
-                      "<message type=\"groupchat\"><delay/><body>test</body></message>"))
+                      "<message type='groupchat'><delay/><body>test</body></message>"))
    (groupchat-stanza
     (string-to-stanza 'cl-ngxmpp:message-stanza
-                      "<message type=\"groupchat\"><body>test</body></message>"))
+                      "<message type='groupchat'><body>test</body></message>"))
    (message-stanza-delayed
     (string-to-stanza 'cl-ngxmpp:message-stanza
                       "<message><delay/><body>test</body></message>"))
    (unknown-stanza
     (string-to-stanza 'cl-ngxmpp:unknown-stanza "<unsupported-unknown/>")))
   (:setup    (cl-ngxmpp:use-xeps xeps-list))
-  (:teardown (setf cl-ngxmpp::*stanzas-dispatchers* nil)))
+  (:teardown (setf cl-ngxmpp::*stanzas-dispatchers* nil))
+  :equality-test #'typep)
 
 (addtest (stanzas-dispatcher-test)
   unknown-stanza
@@ -81,19 +91,16 @@
 (addtest (stanzas-dispatcher-test)
   correct-order-1
   (ensure-same (cl-ngxmpp::dispatch-stanza groupchat-stanza-delayed 'cl-ngxmpp::multi-user-chat-message-groupchat-stanza)
-               'cl-ngxmpp::delayed-delivery-message-groupchat-stanza
-               :test #'typep))
+               'cl-ngxmpp::delayed-delivery-message-groupchat-stanza))
 
 (addtest (stanzas-dispatcher-test)
   correct-order-2
   (ensure-same (cl-ngxmpp::dispatch-stanza groupchat-stanza 'cl-ngxmpp:message-stanza)
-               'cl-ngxmpp::multi-user-chat-message-groupchat-stanza
-               :test #'typep))
+               'cl-ngxmpp::multi-user-chat-message-groupchat-stanza))
 
 (addtest (stanzas-dispatcher-test)
   correct-order-3
   (ensure-same (cl-ngxmpp::dispatch-stanza message-stanza-delayed 'cl-ngxmpp:message-stanza)
-               'cl-ngxmpp::delayed-delivery-message-stanza
-               :test #'typep))
+               'cl-ngxmpp::delayed-delivery-message-stanza))
 
 (describe (run-tests))

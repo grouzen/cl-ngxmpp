@@ -21,7 +21,10 @@
 
 (defmethod adapter-read-from-stream ((adapter usocket-adapter) &key stanza-reader)
   (let ((future (cl-async-future:make-future)))
-    (cl-async-future:finish future (result (stanza-reader-read-stream (make-instance stanza-reader :stanza-stream (socket-stream adapter)))))))
+    (cl-async-future:finish future
+                            (result (stanza-reader-read-stream
+                                     (make-instance stanza-reader
+                                                    :stanza-stream (socket-stream adapter)))))))
 
 (defmethod adapter-write-to-stream ((adapter usocket-adapter) string)
   (let ((future (cl-async-future:make-future)))
