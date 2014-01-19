@@ -28,6 +28,7 @@
            #:xep-exists-p
            #:concat-symbols
            #:use-xeps
+           #:stop-use-xeps
            #:stanza-reader-read-stream           
            ;; Classes
            #:connection
@@ -50,6 +51,7 @@
            #:presence-stanza
            #:presence-subscribe-stanza
            #:presence-show-stanza
+           #:unknown-stanza
            ;; Conditions
            #:handle-stanza-condition
            #:negotiate-sasl-condition))

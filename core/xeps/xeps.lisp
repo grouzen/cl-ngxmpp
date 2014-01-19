@@ -20,8 +20,22 @@
 (defun xep-exists-p (xep-name)
   (get-xep xep-name))
 
+;;
+;; Attention!
+;; These two function affect global state,
+;; because they change *stanzas-dispatchers*.
+;;
 (defun use-xeps (names)
   (setf *stanzas-dispatchers* (build-stanzas-dispatchers% names nil)))
+
+#+nil
+(defun stop-use-xeps (names)
+  (setf *stanzas-dispatchers*
+        (remove-if #'(lambda (disp-name)
+                       (member (string-downcase (symbol-name disp-name))
+                               names
+                               :test #'string=))
+                   *stanzas-dispatchers*)))
   
 (defun build-stanzas-dispatchers% (xeps-list dispatchers)
   (labels ((find-first-dep (deps-list xeps-list)

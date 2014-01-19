@@ -301,7 +301,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   (let* ((message-node (dom:first-child (xml-node stanza)))
          (to           (dom:get-attribute message-node "to"))
          (from         (dom:get-attribute message-node "from"))
-         (message-type (dom:get-attribute message-node "message-type"))
+         (message-type (dom:get-attribute message-node "type"))
          (body         (get-element-data (get-element-by-name message-node "body"))))
     (xml-to-stanza (make-instance class-name
                                   :xml-node     (xml-node stanza)
