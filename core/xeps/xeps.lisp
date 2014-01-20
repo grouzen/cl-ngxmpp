@@ -20,8 +20,22 @@
 (defun xep-exists-p (xep-name)
   (get-xep xep-name))
 
+;;
+;; Attention!
+;; These two function affect global state,
+;; because they change *stanzas-dispatchers*.
+;;
 (defun use-xeps (names)
   (setf *stanzas-dispatchers* (build-stanzas-dispatchers% names nil)))
+
+#+nil
+(defun stop-use-xeps (names)
+  (setf *stanzas-dispatchers*
+        (remove-if #'(lambda (disp-name)
+                       (member (string-downcase (symbol-name disp-name))
+                               names
+                               :test #'string=))
+                   *stanzas-dispatchers*)))
   
 (defun build-stanzas-dispatchers% (xeps-list dispatchers)
   (labels ((find-first-dep (deps-list xeps-list)
@@ -164,7 +178,6 @@
     ;; Stanza class definition
     (push `(defclass* ,stanza-name (,@super-classes) ,slots) definitions)
     ;; Methods for stanza: stanza-to-xml, xml-to-stanza, make-stanza
-    (print methods)
     (when methods
       (mapcar #'(lambda (method)
                   (let* ((method-name     (car method))
@@ -172,7 +185,6 @@
                          (method-obj-arg  (list (first method-args) stanza-name))
                          (method-rest-arg (cdr method-args))
                          (method-body     (third method)))
-                    (print method-name) (print method-obj-arg) (print method-rest-arg) (print method-body)
                     (push `(defmethod ,method-name ((,@method-obj-arg) ,@method-rest-arg) ,method-body) definitions)))
               methods))
     ;; Optional one macro for stanza: with-<stanza>

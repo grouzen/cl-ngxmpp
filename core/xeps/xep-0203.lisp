@@ -32,6 +32,17 @@
                  (stamp       stanza) stamp)
            stanza)))))
 
+   (message-stanza (delayed-delivery-root-stanza
+                    message-stanza)
+     ()
+
+     (:methods
+      ((xml-to-stanza (stanza)
+         (call-next-method stanza)))
+
+      :dispatcher ((stanza)
+        (delayed-delivery-dispatcher stanza))))
+   
    
    (message-groupchat-stanza (delayed-delivery-root-stanza
                               multi-user-chat-message-groupchat-stanza)
