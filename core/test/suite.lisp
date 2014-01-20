@@ -12,6 +12,6 @@
 
 (defparameter *test-print-test-case-names* t)
 
-(defun run-cl-ngxmpp-test-suite ()
+(defun run-tests ()
   "Run suite."
   (describe (run-tests :suite 'cl-ngxmpp-test )))
