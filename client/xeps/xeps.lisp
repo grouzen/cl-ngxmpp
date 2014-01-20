@@ -40,7 +40,6 @@
   ;; TODO: check if xep with xep-name exists.
   (let ((real-definitions
          (mapcar #'(lambda (method)
-                     (print method)
                      (let ((method-name   (first method))
                            (formal-params (second method))
                            (body          (third method)))

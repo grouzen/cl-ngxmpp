@@ -6,4 +6,5 @@
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
 (defpackage #:cl-ngxmpp-test
-  (:use #:cl #:lift))
+  (:use #:cl #:lift)
+  (:export #:run-cl-ngxmpp-test-suite))

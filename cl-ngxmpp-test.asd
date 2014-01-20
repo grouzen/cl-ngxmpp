@@ -7,7 +7,7 @@
 
 (in-package #:cl-user)
 
-(asdf:defsystem cl-ngxmpp-test
+(asdf:defsystem #:cl-ngxmpp-test
   :name "cl-ngxmpp-test"
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
   :depends-on (:lift :cl-ngxmpp)
@@ -15,7 +15,9 @@
   :serial t
   :components ((:module "test"
                         :serial t
-                        :pathname "core/test"
+                        :pathname "core/test"  
                         :components ((:file "package")
+                                     (:file "suite")
                                      (:file "stanzas-test")
                                      (:file "xml-stream-test")))))
+

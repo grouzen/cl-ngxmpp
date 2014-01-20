@@ -13,7 +13,7 @@
 (defun string-to-stanza (stanza-class str)
   (make-instance stanza-class :xml-node (string-to-xml-node str)))
 
-(deftestsuite stanzas-test ()
+(deftestsuite stanzas-test (cl-ngxmpp-test)
   ())
 
 
@@ -62,8 +62,6 @@
   get-elements-by-name-nothing
   (ensure-null (cl-ngxmpp::get-elements-by-name (dom:first-child xml-node) "zero")))
 
-(describe (run-tests))
-
 
 (deftestsuite stanzas-dispatcher-test (stanzas-test)
   ((xeps-list '("multi-user-chat" "delayed-delivery"))
@@ -102,5 +100,3 @@
   correct-order-3
   (ensure-same (cl-ngxmpp::dispatch-stanza message-stanza-delayed 'cl-ngxmpp:message-stanza)
                'cl-ngxmpp::delayed-delivery-message-stanza))
-
-(describe (run-tests))

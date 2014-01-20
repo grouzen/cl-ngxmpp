@@ -7,7 +7,7 @@
 
 (in-package #:cl-user)
 
-(asdf:defsystem cl-ngxmpp
+(asdf:defsystem #:cl-ngxmpp
   :name "cl-ngxmpp"
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
   :license "Lisp-LGPL"
@@ -32,5 +32,3 @@
                                               :components ((:file "xeps")
                                                            (:file "xep-0045")
                                                            (:file "xep-0203")))))))
-
-

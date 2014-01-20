@@ -7,7 +7,7 @@
 
 (in-package #:cl-user)
 
-(asdf:defsystem cl-ngxmpp-client.examples
+(asdf:defsystem #:cl-ngxmpp-client.examples
   :name "cl-ngxmpp-client.examples"
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
   :license "Lisp-LGPL"
