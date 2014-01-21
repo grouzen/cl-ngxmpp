@@ -5,6 +5,6 @@
 ;;;;
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
-(defpackage #:cl-ngxmpp-test
+(defpackage #:cl-ngxmpp-client-test
   (:use #:cl #:lift)
   (:export #:run-all-tests))

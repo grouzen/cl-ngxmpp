@@ -20,6 +20,9 @@
                                      (:module "xeps"
                                               :components ((:file "xeps")
                                                            (:file "xep-0045"))
-                                              :serial t)))))
+                                              :serial t)
+                                     (:module "high"
+                                              :serial t
+                                              :components ((:file "session")))))))
 
 

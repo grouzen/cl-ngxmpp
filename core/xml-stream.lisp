@@ -7,6 +7,20 @@
 
 (in-package #:cl-ngxmpp)
 
+(defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
+  `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
+     ,@body))
+  
+(defmacro with-stream-xml-output ((xml-stream) &body body)
+  (let ((xml (gensym "xml"))
+        (xml-string (gensym "xml-string")))
+    `(let* ((,xml (cxml:with-xml-output
+                      (cxml:make-octet-vector-sink :canonical 1)
+                    ,@body))
+            (,xml-string (babel:octets-to-string ,xml)))
+       (write-to-stream ,xml-stream ,xml-string))))
+
+
 (defclass xml-stream ()
   ((connection :accessor connection :initarg :connection :initform nil)
    (id         :accessor id         :initarg :id         :initform nil)
@@ -40,8 +54,12 @@
 
 (defmethod close-stream ((xml-stream xml-stream))
   (setf (state xml-stream) 'closed)
-  (with-stanza-output (xml-stream)
-    (make-instance 'stream-close-stanza)))
+  (with-stream-xml-output (xml-stream)
+    (stanza-to-xml (make-instance 'stream-close-stanza)))
+  xml-stream)
+  
+;;(with-stanza-output (xml-stream)
+;;   (make-instance 'stream-close-stanza)))
 
 (defmethod restart-stream ((xml-stream xml-stream))
   (setf (features xml-stream) nil)
@@ -68,21 +86,10 @@
     (when (debuggable xml-stream)
       (write-line (format nil "Received stream: ~A" features-result) *debug-io*)
       (print features-stanza *debug-io*)
-      (force-output *debug-io*))))
-             
-(defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
-  `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
-     ,@body))
+      (force-output *debug-io*))
+    xml-stream))
   
-(defmacro with-stream-xml-output ((xml-stream) &body body)
-  (let ((xml (gensym "xml"))
-        (xml-string (gensym "xml-string")))
-    `(let* ((,xml (cxml:with-xml-output
-                      (cxml:make-octet-vector-sink :canonical 1)
-                    ,@body))
-            (,xml-string (babel:octets-to-string ,xml)))
-       (write-to-stream ,xml-stream ,xml-string))))
-
+             
 ;;
 ;; FSM for xml reading.
 ;;

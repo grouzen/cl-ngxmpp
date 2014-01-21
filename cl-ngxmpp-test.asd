@@ -19,5 +19,6 @@
                         :components ((:file "package")
                                      (:file "suite")
                                      (:file "stanzas-test")
+                                     (:file "usocket-adapter-test")
                                      (:file "xml-stream-test")))))
 

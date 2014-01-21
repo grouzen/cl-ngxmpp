@@ -5,13 +5,13 @@
 ;;;;
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
-(in-package #:cl-ngxmpp-test)
+(in-package #:cl-ngxmpp-client-test)
 
-(deftestsuite cl-ngxmpp-test ()
+(deftestsuite cl-ngxmpp-client-test ()
   ())
 
 (defparameter *test-print-test-case-names* t)
 
 (defun run-all-tests ()
   "Run suite."
-  (describe (run-tests :suite 'cl-ngxmpp-test)))
+  (describe (run-tests :suite 'cl-ngxmpp-client-test)))

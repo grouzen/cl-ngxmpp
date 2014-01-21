@@ -5,7 +5,7 @@
 ;;;;
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
-(in-package :cl-ngxmpp-client)
+(in-package #:cl-ngxmpp-client)
 
 (defclass client ()
   ((username        :accessor username        :initarg :username        :initform "")
@@ -58,7 +58,9 @@
           (cl-ngxmpp:negotiate-tls xml-stream)))))
 
 (defmethod authorize ((client client) &key username password mechanism)
-  "SASL authorization over TLS connection. Must be called after connect."
+  "SASL authorization over TLS connection, should be called after the connection
+is established. In case of error signals negotiate-sasl-condition which should be
+handled by the caller."
   (let ((xml-stream (xml-stream client)))
     (setf (username client) username
           (password client) password)
@@ -70,27 +72,28 @@
     ;; and server sends <failure/> stanza, but client didn't manage to define
     ;; handle-stanza for failure stanza.
     (handler-bind
-        ((cl-ngxmpp:negotiate-sasl-condition
-          #'(lambda (c) (invoke-restart 'skip-sasl)))
+        (;(cl-ngxmpp:negotiate-sasl-condition
+         ; #'(lambda (c) (invoke-restart 'skip-sasl)))
          (cl-ngxmpp:handle-stanza-condition
-          #'(lambda (c) (invoke-restart 'skip-handle-stanza))))
-      (macrolet ((with-steps ((&rest steps) &body restarts)
+          #'(lambda (c)
+              (declare (ignore c))
+              (invoke-restart 'skip-handle-stanza))))
+      (macrolet ((with-restarts ((&rest restarts) &body steps)
                    (let ((steps-restarts
                           (mapcar
                            #'(lambda (step)
                                `(restart-case ,step ,@restarts))
                            steps)))
                      `(progn ,@steps-restarts))))
-        (with-steps ((cl-ngxmpp:negotiate-sasl xml-stream
-                                               :username username
-                                               :password password
-                                               :mechanism mechanism)
-                     (%bind% client)
-                     (%session% client)
-                     (send-presence-show client :show "online")
-                     (proceed-stanza client))
-          (skip-sasl () nil)
-          (skip-handle-stanza () nil))))))
+        (with-restarts ((skip-handle-stanza () nil))
+          (cl-ngxmpp:negotiate-sasl xml-stream
+                                    :username username
+                                    :password password
+                                    :mechanism mechanism)
+          (%bind% client)
+          (%session% client)
+          (send-presence-show client :show "online")
+          (proceed-stanza client))))))
 
 (defmethod %bind% ((client client))
   (let ((xml-stream (xml-stream client))
@@ -125,7 +128,8 @@
 (defmethod proceed-stanza ((client client))
   (let ((xml-stream (xml-stream client)))
     (cl-ngxmpp:with-stanza-input (xml-stream stanza)
-      (cl-ngxmpp:handle-stanza stanza))))
+      (cl-ngxmpp:handle-stanza stanza)
+      stanza)))
 
 ;;
 ;; Method just receives an any stanza from network
