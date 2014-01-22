@@ -11,19 +11,17 @@
   ((socket :accessor socket :initarg :socket :initform nil)))
 
 (defmethod adapter-close-connection ((adapter usocket-adapter))
-  (close (socket-stream adapter))
-  adapter)
+  (close (socket-stream adapter)))
 
 (defmethod adapter-open-connection ((adapter usocket-adapter) hostname port)
-  (handler-case
-      (let* ((socket (usocket:socket-connect hostname port :element-type 'character))
-             (stream (usocket:socket-stream socket)))
-        (setf (socket        adapter) socket
-              (socket-stream adapter) stream))
-    (usocket:ns-host-not-found-error  (c) (declare (ignore c)) nil)
-    (usocket:timeout-error            (c) (declare (ignore c)) nil)
-    (usocket:connection-refused-error (c) (declare (ignore c)) nil))
-  adapter)
+  (with-proxy-error connection-error
+      (usocket:ns-host-not-found-error
+       usocket:timeout-error
+       usocket:connection-refused-error)
+    (let* ((socket (usocket:socket-connect hostname port :element-type 'character))
+           (stream (usocket:socket-stream socket)))
+      (setf (socket        adapter) socket
+            (socket-stream adapter) stream))))
 
 (defmethod adapter-read-from-stream ((adapter usocket-adapter) &key stanza-reader)
   (let ((future (cl-async-future:make-future)))

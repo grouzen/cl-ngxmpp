@@ -96,6 +96,9 @@
 ;; Most of code taken and ported from:
 ;; https://github.com/dmatveev/shampoo-emacs/blob/8302cc4e14653980c2027c98d84f9aa3d1b59ebb/shampoo.el#L400
 ;;
+(define-condition stanza-reader-error (proxy-error)
+  ())
+
 (defclass* stanza-reader ()
   ((stanza-stream :accessor stanza-stream :initarg :stanza-stream :initform nil)
    (state         :accessor state         :initarg :state         :initform :init)
@@ -170,15 +173,16 @@
 
 (defmethod stanza-reader-read-char ((stanza-reader stanza-reader))
   (if (null (last-chars stanza-reader))
-      (read-char (stanza-stream stanza-reader) nil :eof)
+      (read-char (stanza-stream stanza-reader) t :eof)
       (stanza-reader-pop-last-chars stanza-reader)))
 
 (defmethod stanza-reader-read-stream ((stanza-reader stanza-reader))
   (loop
      :until (stanza-reader-complete-p stanza-reader)
-     :do (progn
-          (stanza-reader-process stanza-reader)          
-          (stanza-reader-push-result stanza-reader)))
+     :do (with-proxy-error stanza-reader-error
+               (end-of-file)
+             (stanza-reader-process stanza-reader)
+             (stanza-reader-push-result stanza-reader)))
   ;; TODO: remove this hack
   (mapcar #'(lambda (c) (vector-push-extend c (result stanza-reader))) (last-chars stanza-reader))
   stanza-reader)

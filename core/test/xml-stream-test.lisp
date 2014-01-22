@@ -22,23 +22,23 @@
 
 (deftestsuite xml-stream-actions-test (xml-stream-test)
   ((xml-stream      nil)
-   (adapter         (make-instance 'cl-ngxmpp:usocket-adapter))
-   (debuggable      nil)
-   (server-hostname "ch3kr.net")
-   (server-port     5222))
-  (:setup (let ((c (make-instance 'cl-ngxmpp:connection
-                                  :adapter  adapter
-                                  :hostname server-hostname
-                                  :port     server-port)))
-            (when (cl-ngxmpp:connectedp (cl-ngxmpp:open-connection c))
-              (setf xml-stream (make-instance 'cl-ngxmpp:xml-stream
-                                              :connection c
-                                              :debuggable debuggable))))))
+   (connection      (make-instance 'cl-ngxmpp:connection
+                                  :adapter  (make-instance 'cl-ngxmpp:usocket-adapter)
+                                  :hostname "ch3kr.net"
+                                  :port     5222))
+   (debuggable      nil))
+  (:setup (when (cl-ngxmpp:connectedp (cl-ngxmpp:open-connection connection))
+            (setf xml-stream (make-instance 'cl-ngxmpp:xml-stream
+                                            :connection connection
+                                            :debuggable debuggable)))))
+
 
 (deftestsuite xml-stream-actions-open-stream-test (xml-stream-actions-test)
   ()
   (:teardown (when (cl-ngxmpp:openedp xml-stream)
-               (cl-ngxmpp:close-stream xml-stream))))
+               (cl-ngxmpp:close-stream xml-stream)
+               (when (cl-ngxmpp:connectedp connection)
+                 (cl-ngxmpp:close-connection connection)))))
 
 (addtest (xml-stream-actions-open-stream-test)
   open-stream-with-opened-connection
@@ -80,13 +80,13 @@
   read-incorrect-xml
   (progn
     (write-data incorrect-xml stream-out)
-    (ensure-condition type-error (stanza-reader-read stream-in))))
+    (ensure-condition cl-ngxmpp:stanza-reader-error (stanza-reader-read stream-in))))
 
 (addtest (xml-stream-stanza-reader-test)
   read-empty-xml
   (progn
     (write-data empty-xml stream-out)
-    (ensure-condition type-error (stanza-reader-read stream-in))))
+    (ensure-condition cl-ngxmpp:stanza-reader-error (stanza-reader-read stream-in))))
 
 
 (deftestsuite xml-stream-stanza-reader-header-test (xml-stream-stanza-reader-test)
@@ -128,7 +128,7 @@
   read-incorrect-features
   (progn
     (write-data incorrect-features stream-out)
-    (ensure-condition type-error
+    (ensure-condition cl-ngxmpp:stanza-reader-error
       (stanza-reader-read stream-in
                           :reader 'cl-ngxmpp:stanza-reader-features))))
 

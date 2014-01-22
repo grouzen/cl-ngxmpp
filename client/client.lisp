@@ -72,9 +72,7 @@ handled by the caller."
     ;; and server sends <failure/> stanza, but client didn't manage to define
     ;; handle-stanza for failure stanza.
     (handler-bind
-        (;(cl-ngxmpp:negotiate-sasl-condition
-         ; #'(lambda (c) (invoke-restart 'skip-sasl)))
-         (cl-ngxmpp:handle-stanza-condition
+        ((cl-ngxmpp:handle-stanza-condition
           #'(lambda (c)
               (declare (ignore c))
               (invoke-restart 'skip-handle-stanza))))
