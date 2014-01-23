@@ -81,7 +81,7 @@ needs to be implemented only for parental classes"))
   (:documentation
    "This handler must be overrided on client code."))
 
-(define-condition handle-stanza-condition (simple-condition) ())
+(define-condition handle-stanza-error (simple-condition) ())
 
 ;;
 ;; Basic stanza class.
@@ -95,7 +95,7 @@ needs to be implemented only for parental classes"))
     :initform nil)))
 
 (defmethod handle-stanza ((stanza stanza))
-  (error 'handle-stanza-condition
+  (error 'handle-stanza-error
          :format-control "Default stanza handler called. Please define handler for this type of stanza"))
 
 (defmethod make-stanza ((stanza stanza) class-name)

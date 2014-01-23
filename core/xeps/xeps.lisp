@@ -99,10 +99,6 @@
 (defmacro make-stanza-with-xep (xep-name stanza-obj stanza-class)
   `(make-stanza ,stanza-obj (concat-symbols ',xep-name '- ,stanza-class)))
 
-;;(defmacro resolve-name (xep-name name)
-;;  `(concat-symbols ',xep-name '- ,name))
-
-
 ;;
 ;; (with-wrapper ((muc message-stanza) stanza)
 ;;   (cxml:with-elemnt "foo"
@@ -148,22 +144,18 @@
 ;;
 ;; TODO: verification and usefull errors messages.
 (defmacro define-xep ((xep-name &key order author description depends-on) &body body)
-  (let* ((xep-name-string (string-downcase (symbol-name `,xep-name)))
-         (xep-obj         (make-instance 'xep
+    `(let* ((xep-name-string (string-downcase (symbol-name ',xep-name)))
+            (xep-obj         (make-instance 'xep
                                          :name        xep-name-string
-                                         :order       `,order
-                                         :author      `,author
-                                         :description `,description
-                                         :depends-on  `,depends-on))
-         (stanzas-definitions
-          (mapcar #'(lambda (stanza-definition)
-                      `(define-xep-stanza (,xep-name)
-                         ,stanza-definition))
-                  (car body))))
-    (setf (getf *xeps-list* (string-to-keyword xep-name-string)) xep-obj)
-    `(progn
-       ,@stanzas-definitions)))
-
+                                         :order       ,order
+                                         :author      ,author
+                                         :description ,description
+                                         :depends-on  ',depends-on)))
+       (setf (getf *xeps-list* (string-to-keyword xep-name-string)) xep-obj)
+       ,@(mapcar #'(lambda (stanza-definition)
+                     `(define-xep-stanza (,xep-name)
+                        ,stanza-definition))
+                 (car body))))
 
 (defmacro define-xep-stanza ((xep-name) &body body)
   (let* ((stanza-repr   (first body))

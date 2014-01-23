@@ -21,7 +21,7 @@
                            :username        username
                            :password        password
                            :mechanism       mechanism
-                           :debuggable      t)))
+                           :debuggable      nil)))
   (:teardown (setf session nil)))
 
 
@@ -38,12 +38,12 @@
   incorrect-server-hostname-open
   (progn
     (setf (cl-ngxmpp-client::server-hostname session) "incorrect.hostname")
-    (ensure (cl-ngxmpp:closedp
-             (cl-ngxmpp-client::xml-stream (cl-ngxmpp-client:open-session session))))))
+    (ensure-condition cl-ngxmpp:connection-error
+      (cl-ngxmpp-client:open-session session))))
 
 (addtest (session-open-test)
   incorrect-username-open
   (progn
     (setf (cl-ngxmpp-client::username session) "incorrect-username-unknown")
-    (ensure-condition 'cl-ngxmpp:negotiate-sasl-condition
+    (ensure-condition cl-ngxmpp:negotiate-sasl-error
        (cl-ngxmpp-client::xml-stream (cl-ngxmpp-client:open-session session)))))
