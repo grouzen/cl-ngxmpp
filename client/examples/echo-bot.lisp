@@ -48,9 +48,13 @@
         (to   (cl-ngxmpp::to   stanza))
         (body (cl-ngxmpp::body stanza)))
     (write-line (format nil "~A -> ~A: ~A" from to body))
-    (cl-ngxmpp-client:send-message *client*
-                  :to from
-                  :body (format nil ">> ~A" body))))
+    (if (string= body "stop talking")
+        (progn 
+          (cl-ngxmpp-client:send-message *client* :to from :body "Thanks for talking to me ;-)")
+          (cl-ngxmpp-client:disconnect *client*))
+        (cl-ngxmpp-client:send-message *client*
+                                       :to from
+                                       :body (format nil ">> ~A" body)))))
 
 (defun run (&key server-hostname username password mechanism to body)
   (unless (null *client*)
@@ -60,5 +64,9 @@
   (cl-ngxmpp-client:connect *client*)
   (cl-ngxmpp-client:authorize *client* :username username :password password :mechanism mechanism)
   (cl-ngxmpp-client:send-message *client* :to to :body body)
+  (cl-ngxmpp-client:send-message
+   *client*
+   :to to
+   :body "To the end session, send a message: stop talking")
   ;; Wait for messages from opponent
   (cl-ngxmpp-client:proceed-stanza-loop *client*))

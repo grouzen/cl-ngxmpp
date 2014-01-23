@@ -5,8 +5,10 @@ Common Lisp library for XMPP RFCs.
 
 WARNING: This library is under heavy development.  
 There is CL-NGXMPP-CLIENT system which is the more abstract, and contains 
-methods like: send message, send presence, receive stanza, etc. So, most
-of time you must use CL-NGXMPP-CLIENT.
+methods like: send message, send presence, receive stanza, etc.  
+Also inside CL-NGXMPP-CLIENT system there is high level api for roster, 
+presence, and so on.  
+So, most of the time you should use CL-NGXMPP-CLIENT.
 
 Examples:
 =========

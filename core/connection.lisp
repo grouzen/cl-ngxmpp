@@ -8,8 +8,10 @@
 (in-package #:cl-ngxmpp)
 
 (defvar *default-hostname* "localhost")
-
 (defvar *default-port* 5222)
+
+(define-condition connection-error (proxy-error)
+  ())
 
 (defclass connection ()
   ((hostname :accessor hostname :initarg :hostname :initform *default-hostname*)

@@ -5,7 +5,7 @@
 ;;;;
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
-(in-package :cl-ngxmpp-client)
+(in-package #:cl-ngxmpp-client)
 
 (defclass client ()
   ((username        :accessor username        :initarg :username        :initform "")
@@ -36,7 +36,8 @@
 
 (defmethod disconnect ((client client))
   (let* ((xml-stream (xml-stream client))
-         (connection (cl-ngxmpp::connection xml-stream)))
+         (connection (when xml-stream
+                       (cl-ngxmpp::connection xml-stream))))
     (when (and (not (null xml-stream))
                (cl-ngxmpp:openedp xml-stream))
       (cl-ngxmpp:close-stream xml-stream))
@@ -58,39 +59,40 @@
           (cl-ngxmpp:negotiate-tls xml-stream)))))
 
 (defmethod authorize ((client client) &key username password mechanism)
-  "SASL authorization over TLS connection. Must be called after connect."
+  "SASL authorization over TLS connection, should be called after the connection
+is established. In case of error signals negotiate-sasl-condition which should be
+handled by the caller."
   (let ((xml-stream (xml-stream client)))
     (setf (username client) username
           (password client) password)
     ;; This hell is needed for suppression of errors.
-    ;; Default cl-ngxmpp:handle-stanza signals a handle-stanza-condition,
+    ;; Default cl-ngxmpp:handle-stanza signals a handle-stanza-error,
     ;; thus if client didn't define handle-stanza method for appropriate
     ;; type of stanza, authorization will fail.
     ;; There is another case about sasl negotiation, when authorization failed
     ;; and server sends <failure/> stanza, but client didn't manage to define
     ;; handle-stanza for failure stanza.
     (handler-bind
-        ((cl-ngxmpp:negotiate-sasl-condition
-          #'(lambda (c) (invoke-restart 'skip-sasl)))
-         (cl-ngxmpp:handle-stanza-condition
-          #'(lambda (c) (invoke-restart 'skip-handle-stanza))))
-      (macrolet ((with-steps ((&rest steps) &body restarts)
+        ((cl-ngxmpp:handle-stanza-error
+          #'(lambda (c)
+              (declare (ignore c))
+              (invoke-restart 'skip-handle-stanza))))
+      (macrolet ((with-restarts ((&rest restarts) &body steps)
                    (let ((steps-restarts
                           (mapcar
                            #'(lambda (step)
                                `(restart-case ,step ,@restarts))
                            steps)))
                      `(progn ,@steps-restarts))))
-        (with-steps ((cl-ngxmpp:negotiate-sasl xml-stream
-                                               :username username
-                                               :password password
-                                               :mechanism mechanism)
-                     (%bind% client)
-                     (%session% client)
-                     (send-presence-show client :show "online")
-                     (proceed-stanza client))
-          (skip-sasl () nil)
-          (skip-handle-stanza () nil))))))
+        (with-restarts ((skip-handle-stanza () nil))
+          (cl-ngxmpp:negotiate-sasl xml-stream
+                                    :username username
+                                    :password password
+                                    :mechanism mechanism)
+          (%bind% client)
+          (%session% client)
+          (send-presence-show client :show "online")
+          (proceed-stanza client))))))
 
 (defmethod %bind% ((client client))
   (let ((xml-stream (xml-stream client))
@@ -120,7 +122,7 @@
         (loop
            :until (cl-ngxmpp:closedp xml-stream)
            :do (proceed-stanza client))
-      (cl-ngxmpp:handle-stanza-condition (c) (format nil "~S" c)))))
+      (cl-ngxmpp:handle-stanza-error (c) (format nil "~S" c)))))
 
 (defmethod proceed-stanza ((client client))
   (let ((xml-stream (xml-stream client)))

@@ -17,9 +17,48 @@
 
 
 (deftestsuite xml-stream-test (cl-ngxmpp-test)
+  ())
+
+
+(deftestsuite xml-stream-actions-test (xml-stream-test)
+  ((xml-stream      nil)
+   (connection      (make-instance 'cl-ngxmpp:connection
+                                  :adapter  (make-instance 'cl-ngxmpp:usocket-adapter)
+                                  :hostname "ch3kr.net"
+                                  :port     5222))
+   (debuggable      nil))
+  (:setup (when (cl-ngxmpp:connectedp (cl-ngxmpp:open-connection connection))
+            (setf xml-stream (make-instance 'cl-ngxmpp:xml-stream
+                                            :connection connection
+                                            :debuggable debuggable)))))
+
+
+(deftestsuite xml-stream-actions-open-stream-test (xml-stream-actions-test)
+  ()
+  (:teardown (when (cl-ngxmpp:openedp xml-stream)
+               (cl-ngxmpp:close-stream xml-stream)
+               (when (cl-ngxmpp:connectedp connection)
+                 (cl-ngxmpp:close-connection connection)))))
+
+(addtest (xml-stream-actions-open-stream-test)
+  open-stream-with-opened-connection
+  (ensure (cl-ngxmpp:openedp (cl-ngxmpp:open-stream xml-stream))))
+
+#+sbcl
+(addtest (xml-stream-actions-open-stream-test)
+  open-stream-with-closed-connection
+  (progn
+    (cl-ngxmpp:close-connection (cl-ngxmpp::connection xml-stream))
+    (ensure-condition sb-int:closed-stream-error (cl-ngxmpp:open-stream xml-stream))))
+
+
+(deftestsuite xml-stream-stanza-reader-test (xml-stream-test)
   ((filespec #P"reader-test")
    (stream-out nil)
-   (stream-in  nil))
+   (stream-in  nil)
+   (correct-xml "<foo><bar id='a'>dog</bar></foo>")
+   (incorrect-xml "<foo><bar/>")
+   (empty-xml ""))
   (:setup (progn
             (setf stream-out (open filespec
                                    :direction :output
@@ -31,11 +70,6 @@
                (close stream-in)
                (delete-file filespec))))
 
-(deftestsuite xml-stream-stanza-reader-test (xml-stream-test)
-  ((correct-xml "<foo><bar id='a'>dog</bar></foo>")
-   (incorrect-xml "<foo><bar/>")
-   (empty-xml "")))
-
 (addtest (xml-stream-stanza-reader-test)
   read-correct-xml
   (progn
@@ -46,16 +80,16 @@
   read-incorrect-xml
   (progn
     (write-data incorrect-xml stream-out)
-    (ensure-condition type-error (stanza-reader-read stream-in))))
+    (ensure-condition cl-ngxmpp:stanza-reader-error (stanza-reader-read stream-in))))
 
 (addtest (xml-stream-stanza-reader-test)
   read-empty-xml
   (progn
     (write-data empty-xml stream-out)
-    (ensure-condition type-error (stanza-reader-read stream-in))))
+    (ensure-condition cl-ngxmpp:stanza-reader-error (stanza-reader-read stream-in))))
 
 
-(deftestsuite xml-stream-stanza-reader-header-test (xml-stream-test)
+(deftestsuite xml-stream-stanza-reader-header-test (xml-stream-stanza-reader-test)
   ((correct-header "<?xml version='1.0'?>")))
 
 (addtest (xml-stream-stanza-reader-header-test)
@@ -76,7 +110,7 @@
                                     :reader 'cl-ngxmpp:stanza-reader-header)))))
 
 
-(deftestsuite xml-stream-stanza-reader-features-test (xml-stream-test)
+(deftestsuite xml-stream-stanza-reader-features-test (xml-stream-stanza-reader-test)
   ((correct-features "<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' version='1.0'>
                         <stream:features><some_features/></stream:features>")
    (incorrect-features "<stream:stream><stream:features><some_features/>")))
@@ -94,7 +128,7 @@
   read-incorrect-features
   (progn
     (write-data incorrect-features stream-out)
-    (ensure-condition type-error
+    (ensure-condition cl-ngxmpp:stanza-reader-error
       (stanza-reader-read stream-in
                           :reader 'cl-ngxmpp:stanza-reader-features))))
 

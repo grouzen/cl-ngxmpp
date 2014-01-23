@@ -19,4 +19,11 @@
            #:call-methods-with-xep
            #:use-xeps
            ;; Classes
-           #:client))
+           #:client
+
+           ;; High interface: client/high/
+           #:open-session
+           #:close-session
+           ;;Classes
+           #:session))
+

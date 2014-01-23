@@ -53,5 +53,7 @@
            #:presence-show-stanza
            #:unknown-stanza
            ;; Conditions
-           #:handle-stanza-condition
-           #:negotiate-sasl-condition))
+           #:handle-stanza-error
+           #:negotiate-sasl-error
+           #:stanza-reader-error
+           #:connection-error))

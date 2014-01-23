@@ -16,7 +16,8 @@
 (defparameter *sasl-mandatory-mechanisms*
   '("DIGEST-MD5" "PLAIN"))
 
-(define-condition negotiate-sasl-condition (simple-condition) ())
+(define-condition negotiate-sasl-error (simple-condition)
+  ((failure-stanza :accessor failure-stanza :initarg :failure-stanza :initform nil)))
 
 (defmethod negotiate-sasl ((xml-stream xml-stream) &key username password mechanism)
   (let* ((sasl-mechanism (sasl:get-mechanism (%choose-mechanism% mechanism)))
@@ -40,8 +41,10 @@
       mechanism))
 
 (defun %sasl-fail% (failure)
-  (error 'negotiate-sasl-condition
-         :format-control "SASL failed"))
+  (error (make-condition 'negotiate-sasl-error
+                         :failure-stanza failure
+                         :format-control "SASL failed: ~A"
+                         :format-arguments (list failure))))
 
 (defmethod %sasl-plain-negotiation% ((xml-stream xml-stream) sasl-client)
   (print (cl-sasl::password sasl-client))
