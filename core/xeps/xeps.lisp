@@ -168,7 +168,7 @@
          (dispatcher    (getf helpers :dispatcher))
          (definitions   nil))
     ;; Stanza class definition
-    (push `(defclass* ,stanza-name (,@super-classes) ,slots) definitions)
+    (push `(defclass ,stanza-name (,@super-classes) ,slots) definitions)
     ;; Methods for stanza: stanza-to-xml, xml-to-stanza, make-stanza
     (when methods
       (mapcar #'(lambda (method)

@@ -99,7 +99,7 @@
 (define-condition stanza-reader-error (proxy-error)
   ())
 
-(defclass* stanza-reader ()
+(defclass stanza-reader ()
   ((stanza-stream :accessor stanza-stream :initarg :stanza-stream :initform nil)
    (state         :accessor state         :initarg :state         :initform :init)
    (depth         :accessor depth         :initarg :depth         :initform 0)
