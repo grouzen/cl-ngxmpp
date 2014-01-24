@@ -24,6 +24,10 @@ a better way tell me, please."
     (declare (ignore keyword-status))
     keyword-name))
 
+;;
+;; TODO: think about using alexandria library,
+;;       it has a function symbolicate for such needs.
+;;
 (defun concat-symbols (&rest symbols)
   (multiple-value-bind (keyword-name keyword-status)
       (values (intern (apply #'concatenate 'string

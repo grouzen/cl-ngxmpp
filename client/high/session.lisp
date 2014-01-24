@@ -21,14 +21,13 @@
                  :debuggable      debuggable))
 
 (defmethod open-session ((session session))
-  (when (connect session)
+  (connect session)
+  (when (cl-ngxmpp:openedp (xml-stream session))
     (with-slots (username password mechanism) session
-      (authorize session :username username :password password :mechanism mechanism)))
-  session)
+      (authorize session :username username :password password :mechanism mechanism))))
 
 (defmethod close-session ((session session))
-  (disconnect session)
-  session)
+  (disconnect session))
  
       
                  

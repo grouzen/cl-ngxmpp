@@ -7,6 +7,7 @@
 
 (in-package #:cl-ngxmpp)
 
+
 (defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
   `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
      ,@body))
@@ -46,28 +47,34 @@
        (force-output *debug-io*))
      result)))
 
+;;
+;; State-related predicates.
+;; 
 (defmethod openedp ((xml-stream xml-stream))
-  (eq (state xml-stream) 'opened))
+  (with-slots (state) xml-stream
+    (or (eq state 'opened)
+        (eq state 'tls-negotiated)
+        (eq state 'sasl-negotiated))))
 
 (defmethod closedp ((xml-stream xml-stream))
   (eq (state xml-stream) 'closed))
 
+(defmethod tls-negotiatedp ((xml-stream xml-stream))
+  (eq (state xml-stream) 'tls-negotiated))
+
+(defmethod sasl-negotiatedp ((xml-stream xml-stream))
+  (eq (state xml-stream) 'sasl-negotiated))
+
 (defmethod close-stream ((xml-stream xml-stream))
   (setf (state xml-stream) 'closed)
   (with-stream-xml-output (xml-stream)
-    (stanza-to-xml (make-instance 'stream-close-stanza)))
-  xml-stream)
-  
-;;(with-stanza-output (xml-stream)
-;;   (make-instance 'stream-close-stanza)))
+    (stanza-to-xml (make-instance 'stream-close-stanza))))
+
 
 (defmethod restart-stream ((xml-stream xml-stream))
   (setf (features xml-stream) nil)
   (setf (id xml-stream) nil)
   (open-stream xml-stream))
-
-(defmethod has-mandatory-to-negotiate ((xml-stream xml-stream))
-  t)
 
 (defmethod open-stream ((xml-stream xml-stream))
   ;; Send <stream:stream> to initiate connection
@@ -86,9 +93,7 @@
     (when (debuggable xml-stream)
       (write-line (format nil "Received stream: ~A" features-result) *debug-io*)
       (print features-stanza *debug-io*)
-      (force-output *debug-io*))
-    xml-stream))
-  
+      (force-output *debug-io*))))
              
 ;;
 ;; FSM for xml reading.

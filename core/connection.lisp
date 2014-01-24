@@ -35,13 +35,11 @@
 
 (defmethod close-connection ((connection connection))
   "Close TCP connection."
-  (adapter-close-connection (adapter connection))
-  connection)
+  (adapter-close-connection (adapter connection)))
 
 (defmethod open-connection ((connection connection))
   "Open TCP connection to port on hostname, create and open socket, and returns connection."
   (adapter-open-connection (adapter connection)
                            (hostname connection)
-                           (port connection))
-  connection)
+                           (port connection)))
 

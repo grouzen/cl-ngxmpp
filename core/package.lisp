@@ -24,6 +24,8 @@
            #:with-stanza-output
            #:openedp
            #:closedp
+           #:tls-negotiatedp
+           #:sasl-negotiatedp
            #:handle-stanza
            #:xep-exists-p
            #:concat-symbols
