@@ -14,7 +14,8 @@
 
 (defvar *client* nil)
 
-(cl-ngxmpp-client:use-xeps "delayed-delivery" "multi-user-chat")
+(cl-ngxmpp-client:use-xeps '("delayed-delivery"
+                             "multi-user-chat"))
 
 ;;
 ;; Standard set of handlers.

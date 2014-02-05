@@ -26,7 +26,11 @@
 ;; because they change *stanzas-dispatchers*.
 ;;
 (defun use-xeps (names)
-  (setf *stanzas-dispatchers* (build-stanzas-dispatchers% names nil)))
+  (let ((xeps-list (if (null names)
+                       (loop :for (k v) :on *xeps-list* :by #'cddr
+                          :collect (string-downcase (symbol-name k)))
+                       names)))
+    (setf *stanzas-dispatchers* (build-stanzas-dispatchers% xeps-list nil))))
 
 #+nil
 (defun stop-use-xeps (names)

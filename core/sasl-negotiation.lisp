@@ -51,7 +51,7 @@
   (print (cl-sasl::password sasl-client))
   (let ((step-response (base64:usb8-array-to-base64-string
                         ;; BUG: I found a bug in cl-sasl.
-                        ;;      client-step throws error that server-input is nil
+                        ;;      client-step throws error about server-input is nil,
                         ;;      but in client-step server-input argument is ignored.
                         (sasl:client-step sasl-client nil))))
     (with-stanza-output (xml-stream)

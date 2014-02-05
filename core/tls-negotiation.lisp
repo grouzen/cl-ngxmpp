@@ -36,5 +36,5 @@
   (let ((adapter (adapter (connection xml-stream))))
     (with-slots (socket-stream) adapter
       (setf socket-stream (cl+ssl:make-ssl-client-stream socket-stream :external-format '(:utf-8 :eol-style :crlf)))
-      (setf (state xml-stream) 'tls-negotiated)
-      (restart-stream xml-stream))))
+      (restart-stream xml-stream)
+      (setf (state xml-stream) 'tls-negotiated))))

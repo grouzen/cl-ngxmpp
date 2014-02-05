@@ -178,7 +178,7 @@
 
 (defmethod stanza-reader-read-char ((stanza-reader stanza-reader))
   (if (null (last-chars stanza-reader))
-      (read-char (stanza-stream stanza-reader) t :eof)
+      (read-char (stanza-stream stanza-reader) t)
       (stanza-reader-pop-last-chars stanza-reader)))
 
 (defmethod stanza-reader-read-stream ((stanza-reader stanza-reader))

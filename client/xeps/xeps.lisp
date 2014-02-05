@@ -69,7 +69,7 @@
                       'cl-ngxmpp)))
     `(make-instance ',namespace-stanza-class ,@body)))
 
-(defun use-xeps (&rest names)
+(defun use-xeps (names)
   (cl-ngxmpp:use-xeps names)
   (loop
      :for name :in names
