@@ -30,7 +30,8 @@
                                ("PLAIN" (%sasl-plain-negotiation% xml-stream sasl-client))
                                ("DIGEST-MD5" (%sasl-digest-md5-negotiation% xml-stream sasl-client)))))
     (cond ((typep negotiation-result 'success-stanza)
-           (restart-stream xml-stream))
+           (restart-stream xml-stream)
+           (setf (state xml-stream) 'sasl-negotiated))
           ((typep negotiation-result 'failure-stanza)
            (%sasl-fail% negotiation-result)))))
 
@@ -50,7 +51,7 @@
   (print (cl-sasl::password sasl-client))
   (let ((step-response (base64:usb8-array-to-base64-string
                         ;; BUG: I found a bug in cl-sasl.
-                        ;;      client-step throws error that server-input is nil
+                        ;;      client-step throws error about server-input is nil,
                         ;;      but in client-step server-input argument is ignored.
                         (sasl:client-step sasl-client nil))))
     (with-stanza-output (xml-stream)

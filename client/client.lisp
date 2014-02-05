@@ -50,13 +50,14 @@
                                    :adapter  (adapter         client)
                                    :hostname (server-hostname client)
                                    :port     (server-port     client))))
-    (when (cl-ngxmpp:connectedp (cl-ngxmpp:open-connection connection))
+    (cl-ngxmpp:open-connection connection)
+    (when (cl-ngxmpp:connectedp connection)
       (let ((xml-stream (make-instance 'cl-ngxmpp:xml-stream
-                         :connection connection
-                         :debuggable (debuggable client))))
-          (setf (xml-stream client) xml-stream)
-          (cl-ngxmpp:open-stream xml-stream)
-          (cl-ngxmpp:negotiate-tls xml-stream)))))
+                                       :connection connection
+                                       :debuggable (debuggable client))))
+        (setf (xml-stream client) xml-stream)
+        (cl-ngxmpp:open-stream xml-stream)
+        (cl-ngxmpp:negotiate-tls xml-stream)))))
 
 (defmethod authorize ((client client) &key username password mechanism)
   "SASL authorization over TLS connection, should be called after the connection

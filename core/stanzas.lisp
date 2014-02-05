@@ -76,7 +76,6 @@ needs to be implemented only for parental classes"))
   (:documentation
    "Returns xml object which is transformed further to string."))
 
-;; TODO: think about moving handle-stanza's stuff to cl-ngxmpp-client.
 (defgeneric handle-stanza (stanza)
   (:documentation
    "This handler must be overrided on client code."))
@@ -88,7 +87,7 @@ needs to be implemented only for parental classes"))
 ;;
 ;; TODO: export children of stanza class from cl-ngxmpp package.
 ;;
-(defclass* stanza ()
+(defclass stanza ()
   ((xml-node
     :accessor xml-node
     :initarg :xml-node
@@ -127,7 +126,7 @@ needs to be implemented only for parental classes"))
   stanza)
 
 
-(defclass* stream-stanza (stanza)
+(defclass stream-stanza (stanza)
   ((to
     :accessor to
     :initarg :to
@@ -196,7 +195,7 @@ This class describes <stream:stream/> - XML entity which RFC 6120 calls `stream'
     (cxml:attribute "version" (version stanza))))
 
 
-(defclass* stream-features-stanza (stream-stanza)
+(defclass stream-features-stanza (stream-stanza)
   ((features
    :accessor features
    :initarg :features
@@ -236,7 +235,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     stanza))
 
 
-(defclass* stream-close-stanza (stream-stanza) ())
+(defclass stream-close-stanza (stream-stanza) ())
 
 (defmethod xml-to-stanza ((stanza stream-close-stanza))
   stanza)
@@ -245,7 +244,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   (cxml:with-element "stream:stream"))
 
 
-(defclass* stream-error-stanza (stream-stanza)
+(defclass stream-error-stanza (stream-stanza)
   ((error-node
    :accessor error-node
    :initarg :error-node
@@ -254,7 +253,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 ;;
 ;; Message stanzas
 ;;
-(defclass* message-stanza (stanza)
+(defclass message-stanza (stanza)
   ((id
     :accessor id
     :initarg :id
@@ -326,13 +325,13 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
         disp)))
         
     
-(defclass* message-error-stanza (message-stanza)
+(defclass message-error-stanza (message-stanza)
   ())
 
 ;;
 ;; Presence stanzas
 ;;
-(defclass* presence-stanza (stanza)
+(defclass presence-stanza (stanza)
   ((presence-type
     :accessor presence-type
     :initarg :presence-type
@@ -388,7 +387,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
                 (dispatch-stanza stanza 'presence-stanza)))))))
 
 
-(defclass* presence-show-stanza (presence-stanza)
+(defclass presence-show-stanza (presence-stanza)
   ((show :accessor show :initarg :show :initform "")))
 
 (defmethod xml-to-stanza ((stanza presence-show-stanza))
@@ -403,7 +402,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
       (cxml:text (show stanza)))))
 
 
-(defclass* presence-subscribe-stanza (presence-stanza)
+(defclass presence-subscribe-stanza (presence-stanza)
   ((status :accessor status :initarg :status :initform "")))
 
 (defmethod xml-to-stanza ((stanza presence-subscribe-stanza))
@@ -419,7 +418,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
       (cxml:text (status stanza)))))
 
 
-(defclass* presence-error-stanza (presence-stanza)
+(defclass presence-error-stanza (presence-stanza)
   ())
 
 (defmethod xml-to-stanza ((stanza presence-error-stanza))
@@ -429,7 +428,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 ;;
 ;; IQ stanzas
 ;;
-(defclass* iq-stanza (stanza)
+(defclass iq-stanza (stanza)
   ((id
     :accessor id
     :initarg :id
@@ -476,12 +475,12 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
       (:default (dispatch-stanza stanza 'iq-stanza)))))
       
 
-(defclass* iq-get-stanza (iq-stanza) ())
+(defclass iq-get-stanza (iq-stanza) ())
 
 (defmethod xml-to-stanza ((stanza iq-get-stanza))
   stanza)
 
-(defclass* iq-set-stanza (iq-stanza) ())
+(defclass iq-set-stanza (iq-stanza) ())
 
 (defmacro with-iq-set-stanza ((iq-set-stanza) &body body)
   `(with-iq-stanza (,iq-set-stanza)
@@ -489,7 +488,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
      ,@body))
                     
 
-(defclass* iq-set-bind-stanza (iq-set-stanza)
+(defclass iq-set-bind-stanza (iq-set-stanza)
   ((xmlns
     :reader xmlns
     :initform "urn:ietf:params:xml:ns:xmpp-bind")
@@ -507,7 +506,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
           (cxml:text (resource stanza)))))))
 
 
-(defclass* iq-set-session-stanza (iq-set-stanza)
+(defclass iq-set-session-stanza (iq-set-stanza)
   ((xmlns
     :reader xmlns
     :initform "urn:ietf:params:xml:ns:xmpp-session")))
@@ -518,13 +517,13 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
       (cxml:attribute "xmlns" (xmlns stanza)))))
 
 
-(defclass* iq-result-stanza (iq-stanza) ())
+(defclass iq-result-stanza (iq-stanza) ())
 
 (defmethod xml-to-stanza ((stanza iq-result-stanza))
   stanza)
 
 
-(defclass* iq-error-stanza (iq-stanza) ())
+(defclass iq-error-stanza (iq-stanza) ())
 
 (defmethod xml-to-stanza ((stanza iq-error-stanza))
   stanza)
@@ -533,7 +532,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
 ;; TODO: move starttls, proceed, sasl, etc
 ;;       to corresponding files.
 ;;
-(defclass* starttls-stanza (stanza)
+(defclass starttls-stanza (stanza)
   ((xmlns
     :accessor xmlns
     :initarg :xmlns
@@ -547,14 +546,14 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   stanza)
 
 
-(defclass* proceed-stanza (stanza)
+(defclass proceed-stanza (stanza)
   ())
 
 (defmethod xml-to-stanza ((stanza proceed-stanza))
   stanza)
 
 
-(defclass* sasl-stanza (stanza)
+(defclass sasl-stanza (stanza)
   ((xmlns
     :reader xmlns
     :initarg :xmlns
@@ -567,7 +566,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     stanza))
 
 
-(defclass* sasl-auth-stanza (sasl-stanza)
+(defclass sasl-auth-stanza (sasl-stanza)
   ((mechanism
     :accessor mechanism
     :initarg :mechanism
@@ -585,7 +584,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
       (cxml:text (identity-string stanza)))))
 
 
-(defclass* sasl-response-stanza (sasl-stanza)
+(defclass sasl-response-stanza (sasl-stanza)
   ((identity-string
     :accessor identity-string
     :initarg :identity-string
@@ -597,7 +596,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     (unless (null (identity-string stanza))
       (cxml:text (identity-string stanza)))))
 
-(defclass* sasl-challenge-stanza (sasl-stanza)
+(defclass sasl-challenge-stanza (sasl-stanza)
   ((identity-string
     :accessor identity-string
     :initarg :identity-string
@@ -615,7 +614,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     stanza))
          
     
-(defclass* failure-stanza (stanza)
+(defclass failure-stanza (stanza)
   ((xmlns
     :accessor xmlns
     :initarg :xmlns
@@ -630,7 +629,7 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
   stanza)
          
 
-(defclass* success-stanza (stanza)
+(defclass success-stanza (stanza)
   ((xmlns
     :accessor xmlns
     :initarg :xmlns

@@ -21,16 +21,18 @@
 
 
 (deftestsuite xml-stream-actions-test (xml-stream-test)
-  ((xml-stream      nil)
-   (connection      (make-instance 'cl-ngxmpp:connection
-                                  :adapter  (make-instance 'cl-ngxmpp:usocket-adapter)
-                                  :hostname "ch3kr.net"
-                                  :port     5222))
-   (debuggable      nil))
-  (:setup (when (cl-ngxmpp:connectedp (cl-ngxmpp:open-connection connection))
-            (setf xml-stream (make-instance 'cl-ngxmpp:xml-stream
-                                            :connection connection
-                                            :debuggable debuggable)))))
+  ((xml-stream nil)
+   (connection (make-instance 'cl-ngxmpp:connection
+                              :adapter  (make-instance 'cl-ngxmpp:usocket-adapter)
+                              :hostname "ch3kr.net"
+                              :port     5222))
+   (debuggable nil))
+  (:setup (progn
+            (cl-ngxmpp:open-connection connection)
+            (when (cl-ngxmpp:connectedp connection)     
+              (setf xml-stream (make-instance 'cl-ngxmpp:xml-stream
+                                              :connection connection
+                                              :debuggable debuggable))))))
 
 
 (deftestsuite xml-stream-actions-open-stream-test (xml-stream-actions-test)
@@ -42,7 +44,9 @@
 
 (addtest (xml-stream-actions-open-stream-test)
   open-stream-with-opened-connection
-  (ensure (cl-ngxmpp:openedp (cl-ngxmpp:open-stream xml-stream))))
+  (progn
+    (cl-ngxmpp:open-stream xml-stream)
+    (ensure (cl-ngxmpp:openedp xml-stream))))
 
 #+sbcl
 (addtest (xml-stream-actions-open-stream-test)

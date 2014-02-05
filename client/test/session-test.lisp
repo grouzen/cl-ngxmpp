@@ -31,8 +31,10 @@
 
 (addtest (session-open-test)
   correct-open
-  (ensure (cl-ngxmpp:openedp
-           (cl-ngxmpp-client::xml-stream (cl-ngxmpp-client:open-session session)))))
+  (progn
+    (cl-ngxmpp-client:open-session session)
+    (ensure (cl-ngxmpp:openedp
+             (cl-ngxmpp-client::xml-stream session)))))
 
 (addtest (session-open-test)
   incorrect-server-hostname-open
@@ -46,4 +48,5 @@
   (progn
     (setf (cl-ngxmpp-client::username session) "incorrect-username-unknown")
     (ensure-condition cl-ngxmpp:negotiate-sasl-error
-       (cl-ngxmpp-client::xml-stream (cl-ngxmpp-client:open-session session)))))
+      (cl-ngxmpp-client:open-session session))))
+      

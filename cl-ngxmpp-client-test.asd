@@ -18,5 +18,6 @@
                         :pathname "client/test"  
                         :components ((:file "package")
                                      (:file "suite")
+                                     (:file "client-test")
                                      (:file "session-test")))))
 
