@@ -7,6 +7,7 @@
 
 (defpackage #:cl-ngxmpp-client
   (:use #:cl)
+  (:nicknames #:xmpp)
   (:export #:disconnect
            #:authorize
            #:send-message
@@ -24,6 +25,8 @@
            ;; High interface: client/high/
            #:open-session
            #:close-session
+           #:create-session
            ;;Classes
-           #:session))
+           #:session
+           #:domain))
 

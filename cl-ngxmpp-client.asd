@@ -23,6 +23,7 @@
                                               :serial t)
                                      (:module "high"
                                               :serial t
-                                              :components ((:file "session")))))))
+                                              :components ((:file "session")
+                                                           (:file "domain")))))))
 
 

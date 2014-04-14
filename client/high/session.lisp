@@ -9,7 +9,8 @@
 
 (defclass session (client)
   ((mechanism :accessor mechanism :initarg :mechanism :initform nil)
-   (xeps-list :accessor xeps-lits :initarg :xeps-list :initform nil)))
+   (xeps-list :accessor xeps-list :initarg :xeps-list :initform nil)
+   (domains   :accessor domains   :initarg :domains   :initform nil)))
 
 (defun create-session (&key server-hostname (server-port 5222)
                          username password (mechanism nil) (debuggable nil)
@@ -45,8 +46,6 @@ CL-NGXMPP:NEGOTIATE-SASL-ERROR is signaled."
 
 (defmethod close-session ((session session))
   (disconnect session))
- 
-      
                  
                  
                          

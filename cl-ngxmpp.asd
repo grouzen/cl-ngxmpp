@@ -11,7 +11,7 @@
   :name "cl-ngxmpp"
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
   :license "Lisp-LGPL"
-  :depends-on (:cl-async-future :usocket :iolib :cxml :babel :cl+ssl :cl-base64 :cl-sasl)
+  :depends-on (:cl-async-future :usocket :cxml :babel :cl+ssl :cl-base64 :cl-sasl)
   :serial t
   :components ((:module "core"
                         :serial t
@@ -25,8 +25,8 @@
                                      (:module "adapters"
                                               :serial t
                                               :components ((:file "adapters")
-                                                           (:file "usocket-adapter")
-                                                           (:file "iolib-adapter")))
+                                                           (:file "usocket-adapter")))
+                                                           ;;(:file "iolib-adapter")))
                                      (:module "xeps"
                                               :serial t
                                               :components ((:file "xeps")
