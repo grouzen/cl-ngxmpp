@@ -32,71 +32,87 @@
 
 (addtest (stanzas-xml-utils-test)
   get-element-by-name-does-not-exists
-  (ensure-null (cl-ngxmpp::get-element-by-name (dom:first-child xml-node) "bar3")))
+  (ensure-null (xmpp%::get-element-by-name (dom:first-child xml-node) "bar3")))
 
 (addtest (stanzas-xml-utils-test)
   get-element-data-does-not-exists
-  (ensure-same "" (cl-ngxmpp::get-element-data
-                   (cl-ngxmpp::get-element-by-name (dom:first-child xml-node) "bar"))))
+  (ensure-same "" (xmpp%::get-element-data
+                   (xmpp%::get-element-by-name (dom:first-child xml-node) "bar"))))
 
 (addtest (stanzas-xml-utils-test)
   get-element-data-equals
-  (ensure-same "scary" (cl-ngxmpp::get-element-data
-                        (cl-ngxmpp::get-element-by-name 
-                         (cl-ngxmpp::get-element-by-name (dom:first-child xml-node) "baz")
+  (ensure-same "scary" (xmpp%::get-element-data
+                        (xmpp%::get-element-by-name 
+                         (xmpp%::get-element-by-name (dom:first-child xml-node) "baz")
                          "cat"))))
                
 (addtest (stanzas-xml-utils-test)
   get-element-by-name-deep-search-fail
-  (ensure-null (cl-ngxmpp::get-element-by-name (dom:first-child xml-node) "cat")))
+  (ensure-null (xmpp%::get-element-by-name (dom:first-child xml-node) "cat")))
 
 (addtest (stanzas-xml-utils-test)
   get-elements-by-name-find-bar
-  (ensure-same 2 (length (cl-ngxmpp::get-elements-by-name (dom:first-child xml-node) "bar"))))
+  (ensure-same 2 (length (xmpp%::get-elements-by-name (dom:first-child xml-node) "bar"))))
 
 (addtest (stanzas-xml-utils-test)
   get-elements-by-name-find-there-is-more-then
-  (ensure (not (= 3 (length (cl-ngxmpp::get-elements-by-name (dom:first-child xml-node) "bar2"))))))
+  (ensure (not (= 3 (length (xmpp%::get-elements-by-name (dom:first-child xml-node) "bar2"))))))
 
 (addtest (stanzas-xml-utils-test)
   get-elements-by-name-nothing
-  (ensure-null (cl-ngxmpp::get-elements-by-name (dom:first-child xml-node) "zero")))
+  (ensure-null (xmpp%::get-elements-by-name (dom:first-child xml-node) "zero")))
 
 
 (deftestsuite stanzas-dispatcher-test (stanzas-test)
   ((xeps-list '("multi-user-chat" "delayed-delivery"))
    (groupchat-stanza-delayed
-    (string-to-stanza 'cl-ngxmpp::multi-user-chat-message-groupchat-stanza
+    (string-to-stanza 'xmpp%::multi-user-chat-message-groupchat-stanza
                       "<message type='groupchat'><delay/><body>test</body></message>"))
    (groupchat-stanza
-    (string-to-stanza 'cl-ngxmpp:message-stanza
+    (string-to-stanza 'xmpp%:message-stanza
                       "<message type='groupchat'><body>test</body></message>"))
    (message-stanza-delayed
-    (string-to-stanza 'cl-ngxmpp:message-stanza
+    (string-to-stanza 'xmpp%:message-stanza
                       "<message><delay/><body>test</body></message>"))
    (unknown-stanza
-    (string-to-stanza 'cl-ngxmpp:unknown-stanza "<unsupported-unknown/>")))
-  (:setup    (cl-ngxmpp:use-xeps xeps-list))
-  (:teardown (setf cl-ngxmpp::*stanzas-dispatchers* nil))
+    (string-to-stanza 'xmpp%:unknown-stanza "<unsupported-unknown/>")))
+  (:setup    (xmpp%:use-xeps xeps-list))
+  (:teardown (setf xmpp%::*stanzas-dispatchers* nil))
   :equality-test #'typep)
 
 (addtest (stanzas-dispatcher-test)
   unknown-stanza
-  (ensure-same (cl-ngxmpp::dispatch-stanza unknown-stanza 'cl-ngxmpp:stanza)
-               'cl-ngxmpp:unknown-stanza
+  (ensure-same (xmpp%::dispatch-stanza unknown-stanza 'xmpp%:stanza)
+               'xmpp%:unknown-stanza
                :test #'typep))
 
 (addtest (stanzas-dispatcher-test)
   correct-order-1
-  (ensure-same (cl-ngxmpp::dispatch-stanza groupchat-stanza-delayed 'cl-ngxmpp::multi-user-chat-message-groupchat-stanza)
-               'cl-ngxmpp::delayed-delivery-message-groupchat-stanza))
+  (ensure-same (xmpp%::dispatch-stanza groupchat-stanza-delayed 'xmpp%::multi-user-chat-message-groupchat-stanza)
+               'xmpp%::delayed-delivery-message-groupchat-stanza))
 
 (addtest (stanzas-dispatcher-test)
   correct-order-2
-  (ensure-same (cl-ngxmpp::dispatch-stanza groupchat-stanza 'cl-ngxmpp:message-stanza)
-               'cl-ngxmpp::multi-user-chat-message-groupchat-stanza))
+  (ensure-same (xmpp%::dispatch-stanza groupchat-stanza 'xmpp%:message-stanza)
+               'xmpp%::multi-user-chat-message-groupchat-stanza))
 
 (addtest (stanzas-dispatcher-test)
   correct-order-3
-  (ensure-same (cl-ngxmpp::dispatch-stanza message-stanza-delayed 'cl-ngxmpp:message-stanza)
-               'cl-ngxmpp::delayed-delivery-message-stanza))
+  (ensure-same (xmpp%::dispatch-stanza message-stanza-delayed 'xmpp%:message-stanza)
+               'xmpp%::delayed-delivery-message-stanza))
+
+
+(deftestsuite stream-stanza-stanzas-test (stanzas-test)
+  ((features-stanza
+    (string-to-stanza 'xmpp%::stream-features-stanza
+                      "<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='3519827146' from='jabber.ru' version='1.0' xml:lang='ru'><stream:features><starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/><compression xmlns='http://jabber.org/features/compress'><method>zlib</method></compression><push xmlns='p1:push'/><rebind xmlns='p1:rebind'/><ack xmlns='p1:ack'/><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism><mechanism>DIGEST-MD5</mechanism><mechanism>SCRAM-SHA-1</mechanism></mechanisms><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://www.process-one.net/en/ejabberd/' ver='S4v2n+rKmTsgLFog7BtVvK2o660='/><register xmlns='http://jabber.org/features/iq-register'/></stream:features></stream:stream>")))
+  (:equality-test #'typep))
+   
+(addtest (stream-stanza-stanzas-test)
+  correct-stream-stanza
+  (ensure-same (xmpp%::xml-to-stanza features-stanza)
+               'xmpp%::stream-stanza))
+
+    
+
+    
