@@ -10,13 +10,12 @@
 (defmacro string-case (string &body cases)
   "I just didn't find a simple solution for case with strings,
 so I wrote this ugly and I think very slow macro. If you know
-a better way tell me, please."
-  (let ((cond-cases (mapcar #'(lambda (case)
-                                (if (eq (car case) :default)
-                                    (list 't (cadr case))
-                                    (list (list 'string= string (car case)) (cadr case))))
-                            cases)))
-    `(cond ,@cond-cases)))
+a better way tell me, please."  
+  `(cond ,@(mapcar #'(lambda (case)
+                       (if (eq (car case) :default)
+                           (list 't (cadr case))
+                           (list (list 'string= string (car case)) (cadr case))))
+                   cases)))
 
 (defun string-to-keyword (string)
   (multiple-value-bind (keyword-name keyword-status)
@@ -24,6 +23,8 @@ a better way tell me, please."
     (declare (ignore keyword-status))
     keyword-name))
 
+;;
+;; This function is DEPRECATED, use alexandria:symbolicate instead.
 ;;
 ;; TODO: think about using alexandria library,
 ;;       it has a function symbolicate for such needs.

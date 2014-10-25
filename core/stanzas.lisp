@@ -266,6 +266,10 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
     :accessor to
     :initarg :to
     :initform nil)
+   (thread
+    :accessor thread
+    :initarg :thread
+    :initform nil)
    (message-type
     :accessor message-type
     :initarg :message-type
@@ -347,6 +351,18 @@ entity. It is returned by a receiving entity (e.g. on client-to-server communica
    (from
     :accessor from
     :initarg :from
+    :initform nil)
+   (show
+    :accessor show
+    :initarg :show
+    :initform nil)
+   (status
+    :accessor status
+    :initarg :status
+    :initform nil)
+   (priority
+    :accessor priority
+    :initarg :priority
     :initform nil)))
 
 (defmacro with-presence-stanza ((presence-stanza) &body body)

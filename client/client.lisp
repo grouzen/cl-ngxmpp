@@ -92,9 +92,16 @@ handled by the caller."
                                     :mechanism mechanism)
           (%bind% client)
           (%session% client)
+          ;; TODO:
+          ;; move this into session.lisp
           (send-presence-show client :show "online")
           (proceed-stanza client))))))
 
+
+;; TODO:
+;; replace proceed-stanza with something else,
+;; because it seems like HANDLE-STANZA interface is deprecated now.
+;;
 (defmethod %bind% ((client client))
   (let ((xml-stream (xml-stream client))
         (resource   (resource client)))
@@ -112,6 +119,8 @@ handled by the caller."
                      :id "sess"))
     (proceed-stanza client)))
 
+;;
+;; These methods are DEPRECATED, use cl-ngxmpp-client's high interface instead.
 ;;
 ;; Blocking I/O methods, usefull for bots.
 ;; These methods call `cl-ngxmpp:handle-stanza' callback

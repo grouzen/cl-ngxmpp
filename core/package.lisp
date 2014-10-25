@@ -7,6 +7,7 @@
 
 (defpackage #:cl-ngxmpp
   (:use #:cl)
+  (:nicknames #:xmpp%)
   (:export #:*default-hostname*
            #:*default-port*
            ;; Methods
