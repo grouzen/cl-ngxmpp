@@ -1,5 +1,5 @@
 cl-ngxmpp
-=========
+================================================================================
 
 Common Lisp library for XMPP RFCs.
 
@@ -10,8 +10,16 @@ Also inside CL-NGXMPP-CLIENT system there is high level api for roster,
 presence, and so on.  
 So, most of the time you should use CL-NGXMPP-CLIENT.
 
+TODO:
+================================================================================
+
+- [ ] Migrate from cl-async to blackbird library
+- [ ] Develop a high-level interface
+- [ ] Code DSL to have more concise way to define stanzas
+- [ ] Abstract over boilreplate for debug output 
+
 Examples:
-=========
+================================================================================
 
 You can find examples in examples/ directory.  
 First you need to load examples system:  

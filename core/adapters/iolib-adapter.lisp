@@ -12,7 +12,7 @@
 ;; function. Discussion about this issue you can find on this url:
 ;; http://www.reddit.com/r/lisp/comments/1q3kvs/clssl_and_iolib_problem/
 ;;
-;; But anyway I think problem can be solved somehow ;).
+;; But anyway I think the problem can be solved somehow ;).
 ;;
 
 (in-package #:cl-ngxmpp)
@@ -69,9 +69,4 @@
                            (write-string string socket-stream)
                            (force-output socket-stream)
                            (cl-async-future:finish future)))))
-
-(defmethod adapter-connectedp ((adapter iolib-adapter))
-  (with-slots (socket-stream) adapter
-    (and (streamp socket-stream)
-         (open-stream-p socket-stream))))
 

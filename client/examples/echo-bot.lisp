@@ -67,6 +67,6 @@
   (cl-ngxmpp-client:send-message
    *client*
    :to to
-   :body "To the end session, send a message: stop talking")
-  ;; Wait for messages from opponent
+   :body "To end up the session, send a message: 'stop talking'")
+  ;; Wait for messages from your opponent
   (cl-ngxmpp-client:proceed-stanza-loop *client*))

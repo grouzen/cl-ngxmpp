@@ -23,4 +23,8 @@
   (:documentation "Write to XML stream"))
 
 (defgeneric adapter-connectedp (adapter)
-  (:documentation "Connected predicate"))
+  (:documentation "Connected predicate")
+  (:method ((adapter adapter))
+    (with-slots (socket-stream) adapter
+      (and (streamp socket-stream)
+           (open-stream-p socket-stream)))))

@@ -37,8 +37,3 @@
       (write-string string socket-stream)
       (force-output socket-stream))
     (cl-async-future:finish future)))
-
-(defmethod adapter-connectedp ((adapter usocket-adapter))
-  (with-slots (socket-stream) adapter
-    (and (streamp socket-stream)
-         (open-stream-p socket-stream))))

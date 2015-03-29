@@ -43,6 +43,14 @@ a better way tell me, please."
         (t (cl-async-future:wait-for future
              (future-value future)))))
 
+
+;; FIX: find out how to get value from resolved promise
+;; (defun resolve-async-value (value)
+;;   (cond ((not (bb:promisep value)) value)
+;;         ((bb:promise-finished-p value) value)
+;;         (t 
+ 
+
 ;;
 ;; For using condition with WITH-PROXY-ERROR macro,
 ;; it should be a successor of the PROXY-ERROR condition.
