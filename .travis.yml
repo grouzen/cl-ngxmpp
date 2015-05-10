@@ -3,7 +3,10 @@ language: lisp
 env:
   matrix:
     - LISP=sbcl
-
+    - LISP=ccl
+    - LISP=clisp
+    - LISP=ecl
+    
 install:
   - sudo apt-get install texinfo
   - if [ -x ./install.sh ] && head -2 ./install.sh | grep '^#cl-travis' > /dev/null;
