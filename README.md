@@ -1,7 +1,7 @@
 cl-ngxmpp
 ================================================================================
 
-[![Build Status](https://travis-ci.org/grouzen/cl-ngxmpp.svg?branch=fix-cl-async)](https://travis-ci.org/grouzen/cl-ngxmpp)
+[![Build Status](https://travis-ci.org/grouzen/cl-ngxmpp.svg?branch=development)](https://travis-ci.org/grouzen/cl-ngxmpp)
 
 Common Lisp library for XMPP RFCs.
 
@@ -16,11 +16,13 @@ TODO:
 ================================================================================
 
 - [X] Migrate from cl-async to blackbird library
+- [X] Fix Travis-CI build
 - [ ] Develop a high-level interface
 - [ ] Code DSL to have more concise way to define stanzas
 - [ ] Abstract over boilerplate for debug output
 - [ ] Debug levels, and generic 'print-debug' function
 - [ ] Use short package nicknames instead of long names
+- [ ] Write more descriptive README
 
 Examples:
 ================================================================================
