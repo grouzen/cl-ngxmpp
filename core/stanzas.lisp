@@ -45,7 +45,8 @@
 ;;     ,@cases
 ;;     (:default (dispatch-stanza ???)))
 
-(defvar *stanzas-dispatchers* nil)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *stanzas-dispatchers* nil))
 
 (defun dispatch-stanza (stanza super-stanza-class)
   (let ((dispatchers (getf *stanzas-dispatchers*

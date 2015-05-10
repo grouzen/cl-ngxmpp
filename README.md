@@ -20,9 +20,10 @@ TODO:
 - [ ] Develop a high-level interface
 - [ ] Code DSL to have more concise way to define stanzas
 - [ ] Abstract over boilerplate for debug output
-- [ ] Debug levels, and generic 'print-debug' function
+- [ ] Debug levels, and generic `print-debug` function
 - [ ] Use short package nicknames instead of long names
 - [ ] Write more descriptive README
+- [ ] Re-think and (it would be better) rewrite the code in `client/xeps/xeps.lisp`
 
 Examples:
 ================================================================================

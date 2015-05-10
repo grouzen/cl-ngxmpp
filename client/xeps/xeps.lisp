@@ -16,7 +16,7 @@
                      (let ((method-name (first method))
                            (method-args (cdr method)))
                        `(,(find-symbol
-                           (symbol-name (cl-ngxmpp:concat-symbols `,xep-name '- `,method-name))
+                           (symbol-name (alexandria:symbolicate `,xep-name '- `,method-name))
                            'cl-ngxmpp-client)
                           ,@method-args)))
                  (first methods-calls))))
@@ -31,7 +31,7 @@
          (find-symbol (symbol-name 
                        (if (eq `,xep nil)
                            `,stanza-class
-                           (cl-ngxmpp:concat-symbols `,xep '- `,stanza-class)))
+                           (alexandria:symbolicate `,xep '- `,stanza-class)))
                       'cl-ngxmpp)))
     `(defmethod cl-ngxmpp:handle-stanza ((,stanza ,namespace-stanza-class))
        ,@body)))
@@ -57,7 +57,7 @@
        (push #'(lambda ()
                  (defmethod
                      ;; method name
-                     ,(cl-ngxmpp:concat-symbols `,xep-name '- `,method-name)
+                     ,(alexandria:symbolicate `,xep-name '- `,method-name)
                      ;; formal parameters
                      (,@formal-params)
                    ,@body))
@@ -65,7 +65,7 @@
 
 (defmacro make-instance-with-xep ((xep-name) stanza-class &body body)
   (let ((namespace-stanza-class
-         (find-symbol (symbol-name (cl-ngxmpp:concat-symbols `,xep-name '- (second stanza-class)))
+         (find-symbol (symbol-name (alexandria:symbolicate `,xep-name '- (second stanza-class)))
                       'cl-ngxmpp)))
     `(make-instance ',namespace-stanza-class ,@body)))
 
