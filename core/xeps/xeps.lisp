@@ -101,7 +101,7 @@
   
 
 (defmacro make-stanza-with-xep (xep-name stanza-obj stanza-class)
-  `(make-stanza ,stanza-obj (concat-symbols ',xep-name '- ,stanza-class)))
+  `(make-stanza ,stanza-obj (alexandria:symbolicate ',xep-name '- ,stanza-class)))
 
 ;;
 ;; (with-wrapper ((muc message-stanza) stanza)
@@ -113,7 +113,7 @@
 ;;     ...))
 ;;
 (defmacro with-wrapper (((xep-name stanza-name) stanza) &body body)
-  (let ((wrapper-name (concat-symbols 'with '- `,xep-name '- `,stanza-name)))
+  (let ((wrapper-name (alexandria:symbolicate 'with '- `,xep-name '- `,stanza-name)))
     `(,wrapper-name (,stanza)
        ,@body)))
 
@@ -163,7 +163,7 @@
 
 (defmacro define-xep-stanza ((xep-name) &body body)
   (let* ((stanza-repr   (first body))
-         (stanza-name   (concat-symbols `,xep-name '- (car stanza-repr)))
+         (stanza-name   (alexandria:symbolicate `,xep-name '- (car stanza-repr)))
          (super-classes (second stanza-repr))
          (slots         (third  stanza-repr))
          (helpers       (cadddr stanza-repr))
@@ -185,7 +185,7 @@
               methods))
     ;; Optional one macro for stanza: with-<stanza>
     (when wrapper
-      (let* ((macro-name     (concat-symbols 'with '- `,stanza-name))
+      (let* ((macro-name     (alexandria:symbolicate 'with '- `,stanza-name))
              (macro-args     (car wrapper))
              (macro-obj-arg  (car macro-args))
              (macro-body-arg (cdr macro-args))

@@ -15,6 +15,6 @@ install:
 
 script:
   - cl -e '(ql:quickload :cl-ngxmpp-test) 
-           (cl-ngxmpp-test:run-all-tests)
-           (ql:quickload :cl-ngxmpp-client-test)
-           (cl-ngxmpp-client-test:run-all-tests)'
+           (cl-ngxmpp-test:run-all-tests)'
+           #(ql:quickload :cl-ngxmpp-client-test)
+           #(cl-ngxmpp-client-test:run-all-tests)'

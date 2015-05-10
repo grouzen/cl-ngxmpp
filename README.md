@@ -1,6 +1,8 @@
 cl-ngxmpp
 ================================================================================
 
+[![Build Status](https://travis-ci.org/grouzen/cl-ngxmpp.svg?branch=fix-cl-async)](https://travis-ci.org/grouzen/cl-ngxmpp)
+
 Common Lisp library for XMPP RFCs.
 
 WARNING: This library is under heavy development.  
