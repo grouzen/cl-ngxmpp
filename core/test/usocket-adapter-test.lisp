@@ -93,10 +93,9 @@
   read-from-opened-stream
   (progn
     (cl-ngxmpp::adapter-write-to-stream adapter "<?xml?>")
-    (ensure-same (cl-ngxmpp::future-value
-                  (cl-ngxmpp::adapter-read-from-stream
-                   adapter
-                   :stanza-reader 'cl-ngxmpp:stanza-reader-header))
+    (ensure-same (xmpp%:resolve-async-value
+                  (cl-ngxmpp::adapter-read-from-stream adapter
+                                                       :stanza-reader 'cl-ngxmpp:stanza-reader-header))
                  stream-header)))
 
 (addtest (usocket-adapter-read/write-stream-test)
@@ -108,7 +107,7 @@
     (cl-ngxmpp::adapter-read-from-stream adapter :stanza-reader 'cl-ngxmpp:stanza-reader-features)
     (cl-ngxmpp::adapter-write-to-stream adapter stream-close)
     (ensure-condition cl-ngxmpp:stanza-reader-error
-      (cl-ngxmpp::future-value
+      (xmpp%:resolve-async-value
        (cl-ngxmpp::adapter-read-from-stream
         adapter
         :stanza-reader 'cl-ngxmpp:stanza-reader))

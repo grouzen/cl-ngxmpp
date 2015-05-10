@@ -13,10 +13,12 @@ So, most of the time you should use CL-NGXMPP-CLIENT.
 TODO:
 ================================================================================
 
-- [ ] Migrate from cl-async to blackbird library
+- [X] Migrate from cl-async to blackbird library
 - [ ] Develop a high-level interface
 - [ ] Code DSL to have more concise way to define stanzas
-- [ ] Abstract over boilreplate for debug output 
+- [ ] Abstract over boilerplate for debug output
+- [ ] Debug levels, and generic 'print-debug' function
+- [ ] Use short package nicknames instead of long names
 
 Examples:
 ================================================================================

@@ -32,7 +32,8 @@
            #:concat-symbols
            #:use-xeps
            #:stop-use-xeps
-           #:stanza-reader-read-stream           
+           #:stanza-reader-read-stream
+           #:resolve-async-value
            ;; Classes
            #:connection
            #:xml-stream
