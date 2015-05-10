@@ -34,20 +34,19 @@
     (format stream "~A ~A ~A" (id obj) (symbol-name (state obj)) (debuggable obj))))
 
 (defmethod write-to-stream ((xml-stream xml-stream) string)
-  (cl-async-future:alet ((result (adapter-write-to-stream (adapter (connection xml-stream)) string)))
-    (when (debuggable xml-stream)
-      (write-line (format nil "Sent: ~A" string) *debug-io*)
-      (force-output *debug-io*))))
+  (resolve-async-value (adapter-write-to-stream (adapter (connection xml-stream)) string))
+  (when (debuggable xml-stream)
+    (write-line (format nil "Sent: ~A" string) *debug-io*)
+    (force-output *debug-io*)))
 
 (defmethod read-from-stream ((xml-stream xml-stream) &key (stanza-reader 'stanza-reader))
-  (future-value
-   (cl-async-future:alet ((result (adapter-read-from-stream (adapter (connection xml-stream)) :stanza-reader stanza-reader)))
-     (when (debuggable xml-stream)
-       (write-line (format nil "Received: ~A" result) *debug-io*)
-       (force-output *debug-io*))
-     result)))
-
-;;
+  (let ((result (resolve-async-value (adapter-read-from-stream (adapter (connection xml-stream)) :stanza-reader stanza-reader))))
+    (when (debuggable xml-stream)
+      (write-line (format nil "Received: ~A" result) *debug-io*)
+      (force-output *debug-io*))
+    result))
+    
+;;  
 ;; State-related predicates.
 ;; 
 (defmethod openedp ((xml-stream xml-stream))
