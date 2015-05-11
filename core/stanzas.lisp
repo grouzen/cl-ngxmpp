@@ -107,11 +107,13 @@ needs to be implemented only for parental classes"))
 
 (defmacro defstanza-methods% (stanza-name methods)
   `(list ,@(mapcar #'(lambda (method)
-                             (let ((name (first method))
-                                   (args (second method))
-                                   (body (cdr (cdr method))))
-                               `(defstanza-method% ,stanza-name ,name ,args ,@body)))
-                         methods)))
+                       (if (eq (first method) :macro)
+                           `(defmacro ,@(cdr `,method))
+                           (let ((name (first method))
+                                 (args (second method))
+                                 (body (cdr (cdr method))))
+                             `(defstanza-method% ,stanza-name ,name ,args ,@body))))
+                       methods)))
 
 (defmacro defstanza-method% (stanza-name method-name method-args &body method-body)
   (let ((obj-args (mapcar #'(lambda (arg)
@@ -258,427 +260,287 @@ needs to be implemented only for parental classes"))
       stanza)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-   
-(defclass stream-close-stanza (stream-stanza) ())
 
-(defmethod xml-to-stanza ((stanza stream-close-stanza))
-  stanza)
+(defstanza stream-close-stanza (stream-stanza)
+    ()
+  
+  (xml-to-stanza ((stanza))
+    stanza)
 
-(defmethod stanza-to-xml ((stanza stream-close-stanza))
-  (cxml:with-element "stream:stream"))
+  (stanza-to-xml ((stanza))
+    (cxml:with-element "stream:stream")))
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
+(defstanza stream-error-stanza (stream-stanza)
+    (error-node))
 
-(defclass stream-error-stanza (stream-stanza)
-  ((error-node
-   :accessor error-node
-   :initarg :error-node
-   :initform nil)))
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Message stanzas
 ;;
-(defclass message-stanza (stanza)
-  ((id
-    :accessor id
-    :initarg :id
-    :initform nil)
-   (from
-    :accessor from
-    :initarg :from
-    :initform nil)
-   (to
-    :accessor to
-    :initarg :to
-    :initform nil)
-   (thread
-    :accessor thread
-    :initarg :thread
-    :initform nil)
-   (message-type
-    :accessor message-type
-    :initarg :message-type
-    :initform nil)
-   (body
-    :accessor body
-    :initarg :body
-    :initform "")))
 
-(defmethod print-object ((obj message-stanza) stream)
-  (with-slots (from to body) obj
-    (print-unreadable-object (obj stream :type t :identity t)
-      (format stream "from: ~A, to: ~A, body: ~A"
-              from to body))))
+(defstanza message-stanza (stanza)
+    (id from to thread message-type (body ""))
 
-(defmacro with-message-stanza ((message-stanza) &body body)
-  `(cxml:with-element "message"
-     (unless (null (from ,message-stanza))
-       (cxml:attribute "from" (from ,message-stanza)))
-     (unless (null (to ,message-stanza))
-       (cxml:attribute "to" (to ,message-stanza)))
-     (unless (null (message-type ,message-stanza))
-       (cxml:attribute "type" (message-type ,message-stanza)))
-     (cxml:with-element "body"
-       (cxml:text (body ,message-stanza)))
-     ,@body))
+  (print-object ((obj) stream)
+    (with-slots (from to body) obj
+      (print-unreadable-object (obj stream :type t :identity t)
+        (format stream "from: ~A, to: ~A, body: ~A"
+                from to body))))
 
-(defmethod stanza-to-xml ((stanza message-stanza))
-  (with-message-stanza (stanza)))
+  (stanza-to-xml ((stanza))
+    (with-message-stanza (stanza)))
 
-(defmethod make-stanza ((stanza message-stanza) class-name)
-  (let* ((message-node (dom:first-child (xml-node stanza)))
-         (to           (dom:get-attribute message-node "to"))
-         (from         (dom:get-attribute message-node "from"))
-         (message-type (dom:get-attribute message-node "type"))
-         (body         (get-element-data (get-element-by-name message-node "body"))))
-    (xml-to-stanza (make-instance class-name
-                                  :xml-node     (xml-node stanza)
-                                  :message-type message-type
-                                  :from         from
-                                  :to           to
-                                  :body         body))))
+  (make-stanza ((stanza) class-name)
+    (let* ((message-node (dom:first-child (xml-node stanza)))
+           (to           (dom:get-attribute message-node "to"))
+           (from         (dom:get-attribute message-node "from"))
+           (message-type (dom:get-attribute message-node "type"))
+           (body         (get-element-data (get-element-by-name message-node "body"))))
+      (xml-to-stanza (make-instance class-name
+                                    :xml-node     (xml-node stanza)
+                                    :message-type message-type
+                                    :from         from
+                                    :to           to
+                                    :body         body))))
 
-(defmethod xml-to-stanza ((stanza message-stanza))
-  (let* ((xml-node     (xml-node stanza))
-         (message-node (dom:first-child xml-node))
-         (to           (dom:get-attribute message-node "to"))
-         (from         (dom:get-attribute message-node "from"))
-         (body         (get-element-data (get-element-by-name message-node "body")))
-         (disp         (dispatch-stanza stanza 'message-stanza)))
-    (if (typep disp 'unknown-stanza)
-        (progn
-          (setf (to stanza) to
-                (from stanza) from
-                (body stanza) body)
-          stanza)
-        disp)))
+  (xml-to-stanza ((stanza))
+    (let* ((xml-node     (xml-node stanza))
+           (message-node (dom:first-child xml-node))
+           (to           (dom:get-attribute message-node "to"))
+           (from         (dom:get-attribute message-node "from"))
+           (body         (get-element-data (get-element-by-name message-node "body")))
+           (disp         (dispatch-stanza stanza 'message-stanza)))
+      (if (typep disp 'unknown-stanza)
+          (progn
+            (setf (to stanza) to
+                  (from stanza) from
+                  (body stanza) body)
+            stanza)
+          disp)))
+  
+  (:macro with-message-stanza ((message-stanza) &body body)
+    `(cxml:with-element "message"
+       (unless (null (from ,message-stanza))
+         (cxml:attribute "from" (from ,message-stanza)))
+       (unless (null (to ,message-stanza))
+         (cxml:attribute "to" (to ,message-stanza)))
+       (unless (null (message-type ,message-stanza))
+         (cxml:attribute "type" (message-type ,message-stanza)))
+       (cxml:with-element "body"
+         (cxml:text (body ,message-stanza)))
+       ,@body)))
         
-    
-(defclass message-error-stanza (message-stanza)
-  ())
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defstanza message-error-stanza (message-stanza)
+    ())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Presence stanzas
 ;;
-(defclass presence-stanza (stanza)
-  ((presence-type
-    :accessor presence-type
-    :initarg :presence-type
-    :initform nil)
-   (id
-    :accessor id
-    :initarg :id
-    :initform "")
-   (to
-    :accessor to
-    :initarg :to
-    :initform nil)
-   (from
-    :accessor from
-    :initarg :from
-    :initform nil)
-   (show
-    :accessor show
-    :initarg :show
-    :initform nil)
-   (status
-    :accessor status
-    :initarg :status
-    :initform nil)
-   (priority
-    :accessor priority
-    :initarg :priority
-    :initform nil)))
 
-(defmacro with-presence-stanza ((presence-stanza) &body body)
-  `(cxml:with-element "presence"
-     (unless (null (to ,presence-stanza))
-       (cxml:attribute "to"   (to ,presence-stanza)))
-     (unless (null (from ,presence-stanza))
-       (cxml:attribute "from" (from ,presence-stanza)))
-     (unless (null (presence-type ,presence-stanza))
-       (cxml:attribute "type" (presence-type ,presence-stanza)))
-     ,@body))
+(defstanza presence-stanza (stanza)
+    (presence-type (id "") to from show status priority)
 
-(defmethod stanza-to-xml ((stanza presence-stanza))
-  (with-presence-stanza (stanza)))
+  (:macro with-presence-stanza ((presence-stanza) &body body)
+    `(cxml:with-element "presence"
+       (unless (null (to ,presence-stanza))
+         (cxml:attribute "to"   (to ,presence-stanza)))
+       (unless (null (from ,presence-stanza))
+         (cxml:attribute "from" (from ,presence-stanza)))
+       (unless (null (presence-type ,presence-stanza))
+         (cxml:attribute "type" (presence-type ,presence-stanza)))
+       ,@body))
 
-(defmethod make-stanza ((stanza presence-stanza) class-name)
-  (let* ((xml-node      (xml-node stanza))
-         (presence-node (dom:first-child xml-node))
-         (presence-type (dom:get-attribute presence-node "type"))
-         (to            (dom:get-attribute presence-node "to"))
-         (from          (dom:get-attribute presence-node "from")))
-    (xml-to-stanza (make-instance class-name
-                                  :xml-node xml-node
-                                  :to to
-                                  :from from
-                                  :presence-type presence-type))))
+  (stanza-to-xml ((stanza))
+    (with-presence-stanza (stanza)))
+
+  (make-stanza ((stanza) class-name)
+    (let* ((xml-node      (xml-node stanza))
+           (presence-node (dom:first-child xml-node))
+           (presence-type (dom:get-attribute presence-node "type"))
+           (to            (dom:get-attribute presence-node "to"))
+           (from          (dom:get-attribute presence-node "from")))
+      (xml-to-stanza (make-instance class-name
+                                    :xml-node xml-node
+                                    :to to
+                                    :from from
+                                    :presence-type presence-type))))
                                   
-(defmethod xml-to-stanza ((stanza presence-stanza))
-  (let* ((xml-node      (xml-node stanza))
-         (presence-type (dom:get-attribute (dom:first-child xml-node) "type")))
-    (string-case presence-type
-      ("subscribe" (make-stanza stanza 'presence-subscribe-stanza))
-      ("error"     (make-stanza stanza 'presence-error-stanza))
-      (:default
-          (let ((show (get-element-by-name (dom:first-child (xml-node stanza)) "show")))
-            (if show
-                (make-stanza stanza 'presence-show-stanza)
-                (dispatch-stanza stanza 'presence-stanza)))))))
+  (xml-to-stanza ((stanza))
+    (let* ((xml-node      (xml-node stanza))
+           (presence-type (dom:get-attribute (dom:first-child xml-node) "type")))
+      (string-case presence-type
+        ("subscribe" (make-stanza stanza 'presence-subscribe-stanza))
+        ("error"     (make-stanza stanza 'presence-error-stanza))
+        (:default
+            (let ((show (get-element-by-name (dom:first-child (xml-node stanza)) "show")))
+              (if show
+                  (make-stanza stanza 'presence-show-stanza)
+                  (dispatch-stanza stanza 'presence-stanza))))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defclass presence-show-stanza (presence-stanza)
-  ((show :accessor show :initarg :show :initform "")))
+(defstanza presence-show-stanza (presence-stanza)
+    ((show ""))
 
-(defmethod xml-to-stanza ((stanza presence-show-stanza))
-  (let* ((xml-node  (xml-node stanza))
-         (show      (get-element-data (get-element-by-name (dom:first-child xml-node) "show"))))
-    (setf (show stanza) show)
+  (xml-to-stanza ((stanza))
+    (let* ((xml-node  (xml-node stanza))
+           (show      (get-element-data (get-element-by-name (dom:first-child xml-node) "show"))))
+      (setf (show stanza) show)
+      stanza))
+
+  (stanza-to-xml ((stanza))
+    (with-presence-stanza (stanza)
+      (cxml:with-element "show"
+        (cxml:text (show stanza))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+
+(defstanza presence-subscribe-stanza (presence-stanza)
+    ((status ""))
+
+  (xml-to-stanza ((stanza))
+    (let* ((xml-node (xml-node stanza))
+           (status   (get-element-data
+                      (get-element-by-name (dom:first-child xml-node) "status"))))
+      (setf (status stanza) status)
+      stanza))
+
+  (stanza-to-xml ((stanza))
+    (with-presence-stanza (stanza)
+      (cxml:with-element "status"
+        (cxml:text (status stanza))))))
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
+
+(defstanza presence-error-stanza (presence-stanza)
+    ()
+
+  (xml-to-stanza ((stanza))
     stanza))
 
-(defmethod stanza-to-xml ((stanza presence-show-stanza))
-  (with-presence-stanza (stanza)
-    (cxml:with-element "show"
-      (cxml:text (show stanza)))))
-
-
-(defclass presence-subscribe-stanza (presence-stanza)
-  ((status :accessor status :initarg :status :initform "")))
-
-(defmethod xml-to-stanza ((stanza presence-subscribe-stanza))
-  (let* ((xml-node (xml-node stanza))
-         (status   (get-element-data
-                    (get-element-by-name (dom:first-child xml-node) "status"))))
-    (setf (status stanza) status)
-    stanza))
-
-(defmethod stanza-to-xml ((stanza presence-subscribe-stanza))
-  (with-presence-stanza (stanza)
-    (cxml:with-element "status"
-      (cxml:text (status stanza)))))
-
-
-(defclass presence-error-stanza (presence-stanza)
-  ())
-
-(defmethod xml-to-stanza ((stanza presence-error-stanza))
-  stanza)
-
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 ;;
 ;; IQ stanzas
 ;;
-(defclass iq-stanza (stanza)
-  ((id
-    :accessor id
-    :initarg :id
-    :initform nil)
-   (iq-type
-    :accessor iq-type
-    :initarg :iq-type
-    :initform "get")
-   (to
-    :accessor to
-    :initarg :to
-    :initform nil)
-   (from
-    :accessor from
-    :initarg :from
-    :initform nil)))
 
-(defmacro with-iq-stanza ((iq-stanza) &body body)
-  `(cxml:with-element "iq"
-    (cxml:attribute "id" (id ,iq-stanza))
-    (unless (null (to ,iq-stanza))
-      (cxml:attribute "to" (to ,iq-stanza)))
-    (unless (null (from ,iq-stanza))
-      (cxml:attribute "from" (from ,iq-stanza)))
-    ,@body))
+(defstanza iq-stanza (stanza)
+    (id (iq-type "get") to from)
 
-(defmethod make-stanza ((stanza iq-stanza) class-name)
-  (let* ((xml-node (xml-node stanza))
-         (iq-node (dom:first-child xml-node)))
-    (xml-to-stanza (make-instance class-name
-                                  :xml-node xml-node
-                                  :to       (dom:get-attribute iq-node "to")
-                                  :from     (dom:get-attribute iq-node "from")
-                                  :id       (dom:get-attribute iq-node "id")
-                                  :iq-type  (dom:get-attribute iq-node "type")))))
+  (:macro with-iq-stanza ((iq-stanza) &body body)
+    `(cxml:with-element "iq"
+       (cxml:attribute "id" (id ,iq-stanza))
+       (unless (null (to ,iq-stanza))
+         (cxml:attribute "to" (to ,iq-stanza)))
+       (unless (null (from ,iq-stanza))
+         (cxml:attribute "from" (from ,iq-stanza)))
+       ,@body))
 
-(defmethod xml-to-stanza ((stanza iq-stanza))
-  (let* ((xml-node (xml-node stanza))
-         (iq-type  (dom:get-attribute (dom:first-child xml-node) "type")))
-    (string-case iq-type
-      ("result" (make-stanza stanza 'iq-result-stanza))
-      ("error"  (make-stanza stanza 'iq-error-stanza))
-      ("get"    (make-stanza stanza 'iq-get-stanza))
-      (:default (dispatch-stanza stanza 'iq-stanza)))))
-      
+  (make-stanza ((stanza) class-name)
+    (let* ((xml-node (xml-node stanza))
+           (iq-node (dom:first-child xml-node)))
+      (xml-to-stanza (make-instance class-name
+                                    :xml-node xml-node
+                                    :to       (dom:get-attribute iq-node "to")
+                                    :from     (dom:get-attribute iq-node "from")
+                                    :id       (dom:get-attribute iq-node "id")
+                                    :iq-type  (dom:get-attribute iq-node "type")))))
 
-(defclass iq-get-stanza (iq-stanza) ())
+  (xml-to-stanza ((stanza))
+    (let* ((xml-node (xml-node stanza))
+           (iq-type  (dom:get-attribute (dom:first-child xml-node) "type")))
+      (string-case iq-type
+        ("result" (make-stanza stanza 'iq-result-stanza))
+        ("error"  (make-stanza stanza 'iq-error-stanza))
+        ("get"    (make-stanza stanza 'iq-get-stanza))
+        (:default (dispatch-stanza stanza 'iq-stanza))))))
 
-(defmethod xml-to-stanza ((stanza iq-get-stanza))
-  stanza)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
-(defclass iq-set-stanza (iq-stanza) ())
+(defstanza iq-get-stanza (iq-stanza)
+    ()
 
-(defmacro with-iq-set-stanza ((iq-set-stanza) &body body)
-  `(with-iq-stanza (,iq-set-stanza)
-     (cxml:attribute "type" "set")
-     ,@body))
-                    
-
-(defclass iq-set-bind-stanza (iq-set-stanza)
-  ((xmlns
-    :reader xmlns
-    :initform "urn:ietf:params:xml:ns:xmpp-bind")
-   (resource
-    :accessor resource
-    :initarg :resource
-    :initform nil)))
-
-(defmethod stanza-to-xml ((stanza iq-set-bind-stanza))
-  (with-iq-set-stanza (stanza)
-    (cxml:with-element "bind"
-      (cxml:attribute "xmlns" (xmlns stanza))
-      (unless (null (resource stanza))
-        (cxml:with-element "resource"
-          (cxml:text (resource stanza)))))))
-
-
-(defclass iq-set-session-stanza (iq-set-stanza)
-  ((xmlns
-    :reader xmlns
-    :initform "urn:ietf:params:xml:ns:xmpp-session")))
-
-(defmethod stanza-to-xml ((stanza iq-set-session-stanza))
-  (with-iq-set-stanza (stanza)
-    (cxml:with-element "session"
-      (cxml:attribute "xmlns" (xmlns stanza)))))
-
-
-(defclass iq-result-stanza (iq-stanza) ())
-
-(defmethod xml-to-stanza ((stanza iq-result-stanza))
-  stanza)
-
-
-(defclass iq-error-stanza (iq-stanza) ())
-
-(defmethod xml-to-stanza ((stanza iq-error-stanza))
-  stanza)
-
-;;
-;; TODO: move starttls, proceed, sasl, etc
-;;       to corresponding files.
-;;
-(defclass starttls-stanza (stanza)
-  ((xmlns
-    :accessor xmlns
-    :initarg :xmlns
-    :initform "urn:ietf:params:xml:ns:xmpp-tls")))
-
-(defmethod stanza-to-xml ((stanza starttls-stanza))
-  (cxml:with-element "starttls"
-    (cxml:attribute "xmlns" (xmlns stanza))))
-
-(defmethod xml-to-stanza ((stanza starttls-stanza))
-  stanza)
-
-
-(defclass proceed-stanza (stanza)
-  ())
-
-(defmethod xml-to-stanza ((stanza proceed-stanza))
-  stanza)
-
-
-(defclass sasl-stanza (stanza)
-  ((xmlns
-    :reader xmlns
-    :initarg :xmlns
-    :initform "urn:ietf:params:xml:ns:xmpp-sasl")))
-
-(defmethod xml-to-stanza ((stanza sasl-stanza))
-  (let* ((xml-node (xml-node stanza))
-         (response-node (dom:first-child xml-node)))
-    (setf (xmlns stanza) (dom:get-attribute response-node "xmlns"))
+  (xml-to-stanza ((stanza))
     stanza))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defclass sasl-auth-stanza (sasl-stanza)
-  ((mechanism
-    :accessor mechanism
-    :initarg :mechanism
-    :initform "DIGEST-MD5")
-   (identity-string
-    :accessor identity-string
-    :initarg :identity-string
-    :initform nil)))
-   
-(defmethod stanza-to-xml ((stanza sasl-auth-stanza))
-  (cxml:with-element "auth"
-    (cxml:attribute "xmlns"     (xmlns stanza))
-    (cxml:attribute "mechanism" (mechanism stanza))
-    (unless (null (identity-string stanza))
-      (cxml:text (identity-string stanza)))))
+(defstanza iq-set-stanza (iq-stanza)
+    ()
 
+  (:macro with-iq-set-stanza ((iq-set-stanza) &body body)
+    `(with-iq-stanza (,iq-set-stanza)
+       (cxml:attribute "type" "set")
+       ,@body)))
 
-(defclass sasl-response-stanza (sasl-stanza)
-  ((identity-string
-    :accessor identity-string
-    :initarg :identity-string
-    :initform nil)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
-(defmethod stanza-to-xml ((stanza sasl-response-stanza))
-  (cxml:with-element "response"
-    (cxml:attribute "xmlns" (xmlns stanza))
-    (unless (null (identity-string stanza))
-      (cxml:text (identity-string stanza)))))
+(defstanza iq-set-bind-stanza (iq-set-stanza)
+    (resource (xmlns "urn:ietf:params:xml:ns:xmpp-bind"))
 
-(defclass sasl-challenge-stanza (sasl-stanza)
-  ((identity-string
-    :accessor identity-string
-    :initarg :identity-string
-    :initform nil)))
+  (stanza-to-xml ((stanza))
+    (with-iq-set-stanza (stanza)
+      (cxml:with-element "bind"
+        (cxml:attribute "xmlns" (xmlns stanza))
+        (unless (null (resource stanza))
+          (cxml:with-element "resource"
+            (cxml:text (resource stanza))))))))
 
-(defmethod print-object ((obj sasl-challenge-stanza) stream)
-  (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "identity-string: ~A" (identity-string obj))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod xml-to-stanza ((stanza sasl-challenge-stanza))
-  (let ((xml-node (xml-node stanza)))
-    (setf (identity-string stanza)
-          (base64:base64-string-to-string
-           (dom:data (dom:first-child (dom:first-child xml-node)))))
+(defstanza iq-set-session-stanza (iq-set-stanza)
+    ((xmlns "urn:ietf:params:xml:ns:xmpp-session"))
+
+  (stanza-to-xml ((stanza))
+    (with-iq-set-stanza (stanza)
+      (cxml:with-element "session"
+        (cxml:attribute "xmlns" (xmlns stanza))))))
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstanza iq-result-stanza (iq-stanza)
+    ()
+  
+  (xml-to-stanza ((stanza))
     stanza))
-         
-    
-(defclass failure-stanza (stanza)
-  ((xmlns
-    :accessor xmlns
-    :initarg :xmlns
-    :initform "")))
 
-(defmethod print-object ((obj failure-stanza) stream)
-  (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "xmlns: ~A" (xmlns obj))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod xml-to-stanza ((stanza failure-stanza))
-  (setf (xmlns stanza) (dom:get-attribute (dom:first-child (xml-node stanza)) "xmlns"))
-  stanza)
-         
+(defstanza iq-error-stanza (iq-stanza)
+    ()
 
-(defclass success-stanza (stanza)
-  ((xmlns
-    :accessor xmlns
-    :initarg :xmlns
-    :initform "")))
+  (xml-to-stanza ((stanza))
+    stanza))
 
-(defmethod xml-to-stanza ((stanza success-stanza))
-  (setf (xmlns stanza) (dom:get-attribute (dom:first-child (xml-node stanza)) "xmlns"))
-  stanza)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defmethod print-object ((obj success-stanza) stream)
-  (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "xmlns: ~A" (xmlns obj))))
+(defstanza failure-stanza (stanza)
+    ((xmlns ""))
+
+  (print-object ((obj) stream)
+    (print-unreadable-object (obj stream :type t :identity t)
+      (format stream "xmlns: ~A" (xmlns obj))))
+
+  (xml-to-stanza ((stanza))
+    (setf (xmlns stanza) (dom:get-attribute (dom:first-child (xml-node stanza)) "xmlns"))
+    stanza))
+  
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;         
+
+(defstanza success-stanza (stanza)
+    ((xmlns ""))
+
+  (xml-to-stanza ((stanza))
+    (with-slots (xmlns) stanza
+      (setf xmlns (dom:get-attribute (dom:first-child (xml-node stanza)) "xmlns"))
+    stanza))
+
+  (print-object ((obj) stream)
+    (print-unreadable-object (obj stream :type t :identity t)
+      (format stream "xmlns: ~A" (xmlns obj)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

@@ -7,6 +7,63 @@
 
 (in-package :cl-ngxmpp)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Stanzas
+;; 
+
+(defstanza sasl-stanza (stanza)
+    (identity-string (xmlns "urn:ietf:params:xml:ns:xmpp-sasl"))
+  
+  (xml-to-stanza ((stanza))
+    (let* ((xml-node (xml-node stanza))
+           (response-node (dom:first-child xml-node)))
+      (setf (xmlns stanza) (dom:get-attribute response-node "xmlns"))
+      stanza)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstanza sasl-auth-stanza (sasl-stanza)
+    ((mechanism "DIGEST-MD5"))
+  
+  (stanza-to-xml ((stanza))
+    (cxml:with-element "auth"
+      (cxml:attribute "xmlns"     (xmlns stanza))
+      (cxml:attribute "mechanism" (mechanism stanza))
+      (unless (null (identity-string stanza))
+        (cxml:text (identity-string stanza))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstanza sasl-response-stanza (sasl-stanza)
+    ()
+
+  (stanza-to-xml ((stanza))
+    (cxml:with-element "response"
+      (cxml:attribute "xmlns" (xmlns stanza))
+      (unless (null (identity-string stanza))
+        (cxml:text (identity-string stanza))))))
+
+;; 
+;; The end of stanzas
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstanza sasl-challenge-stanza (sasl-stanza)
+    ()
+  
+  (print-object ((obj) stream)
+    (print-unreadable-object (obj stream :type t :identity t)
+      (format stream "identity-string: ~A" (identity-string obj))))
+
+  (xml-to-stanza ((stanza))
+    (let ((xml-node (xml-node stanza)))
+      (setf (identity-string stanza)
+            (base64:base64-string-to-string
+             (dom:data (dom:first-child (dom:first-child xml-node)))))
+      stanza)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Because cl-sasl library doesn't support SCRAM-SHA-1 and SCRAM-SHA-1-PLUS
 ;; mechanisms we are forced to support old and week PLAIN and DIGEST-MD5

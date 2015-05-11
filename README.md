@@ -18,7 +18,7 @@ TODO:
 - [X] Migrate from cl-async to blackbird library
 - [X] Fix Travis-CI build
 - [ ] Develop a high-level interface
-- [ ] Code DSL to have more concise way to define stanzas
+- [X] Code DSL to have more concise way to define stanzas
 - [ ] Abstract over boilerplate for debug output
 - [ ] Debug levels, and generic `print-debug` function
 - [ ] Use short package nicknames instead of long names

@@ -7,6 +7,28 @@
 
 (in-package #:cl-ngxmpp)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstanza starttls-stanza (stanza)
+    ((xmlns "urn:ietf:params:xml:ns:xmpp-tls"))
+  
+  (stanza-to-xml ((stanza))
+    (cxml:with-element "starttls"
+      (cxml:attribute "xmlns" (xmlns stanza))))
+
+  (xml-to-stanza ((stanza))
+    stanza))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstanza proceed-stanza (stanza)
+    ()
+
+  (xml-to-stanza ((stanza))
+    stanza))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (define-condition negotiate-tls-error (simple-condition)
   ((failure-stanza :accessor failure-stanza :initarg :failure-stanza :initform nil)))
 
