@@ -12,7 +12,8 @@
 ;; '(:xep-name xep-class
 ;;    ...)
 ;;
-(defvar *xeps-list* nil)
+(eval-when (:compile-toplevel :load-toplevel :execute)
+  (defvar *xeps-list* nil))
 
 (defun get-xep (xep-name)
   (getf *xeps-list* (string-to-keyword xep-name)))

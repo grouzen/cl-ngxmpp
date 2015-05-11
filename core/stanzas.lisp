@@ -83,159 +83,182 @@ needs to be implemented only for parental classes"))
 
 (define-condition handle-stanza-error (simple-condition) ())
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (defstanza stanza ()
+;;     (xml-node)
+;;   (handle-stanza ((stanza))
+;;     (error 'handle-stanza-error
+;;            :format-control "Default stanza handler called. Please define handler for this type of stanza"))
+;;  
+;;   (make-stanza ((stanza) class-name)
+;;     (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))
+;;
+;;   (cool-method ((obj (conrete-obj concrete-class)) args)
+;;     ...)
+;;
+;;   (xml-to-stanza (stanza)
+;;     ...))
+
+(defmacro defstanza (stanza-name superclasses slots &rest methods)
+  `(progn
+     (defstanza-class% ,stanza-name ,superclasses ,slots)
+     (defstanza-methods% ,stanza-name ,methods)))
+
+(defmacro defstanza-methods% (stanza-name methods)
+  `(list ,@(mapcar #'(lambda (method)
+                             (let ((name (first method))
+                                   (args (second method))
+                                   (body (cdr (cdr method))))
+                               `(defstanza-method% ,stanza-name ,name ,args ,@body)))
+                         methods)))
+
+(defmacro defstanza-method% (stanza-name method-name method-args &body method-body)
+  (let ((obj-args (mapcar #'(lambda (arg)
+                              (cond ((listp arg)
+                                     (if (> (length arg) 2)
+                                         (error "Argument ~A is neither a non-NIL symbol nor a list of form '(obj class)" arg)
+                                         arg))
+                                    (t (list arg stanza-name))))
+                          (first method-args)))
+        (rest-args (cdr method-args)))
+    `(defmethod ,method-name (,@obj-args ,@rest-args)
+       ,@method-body)))
+
+(defmacro defstanza-class% (stanza-name superclasses slots)
+  (let ((slotz (mapcar #'(lambda (slot)
+                           (let* ((ds (cond ((listp slot)
+                                             (if (> (length slot) 2)
+                                                 (error "Slot ~A is neither a non-NIL symbol nor a list of form '(name initform)" slot)
+                                                 slot))
+                                            (t (list slot nil))))
+                                  (name (first ds))
+                                  (initform (second ds)))
+                             (list name
+                                   :accessor name
+                                   :initarg (alexandria:make-keyword name)
+                                   :initform initform)))
+                       slots)))
+    `(defclass ,stanza-name (,@superclasses) (,@slotz))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Basic stanza class.
 ;;
 ;; TODO: export children of stanza class from cl-ngxmpp package.
 ;;
-(defclass stanza ()
-  ((xml-node
-    :accessor xml-node
-    :initarg :xml-node
-    :initform nil)))
 
-(defmethod handle-stanza ((stanza stanza))
-  (error 'handle-stanza-error
-         :format-control "Default stanza handler called. Please define handler for this type of stanza"))
+(defstanza stanza ()
+    (xml-node)
+  (handle-stanza ((stanza))
+    (error 'handle-stanza-error
+           :format-control "Default stanza handler called. Please define handler for this type of stanza"))
+ 
+  (make-stanza ((stanza) class-name)
+    (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))
 
-(defmethod make-stanza ((stanza stanza) class-name)
-  (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))
+  (xml-to-stanza ((stanza))
+    (let ((qname (dom:node-name (dom:first-child (xml-node stanza)))))
+      (string-case qname
+        ("stream:stream"   (make-stanza stanza 'stream-stanza))
+        ("message"         (make-stanza stanza 'message-stanza))
+        ("failure"         (make-stanza stanza 'failure-stanza))
+        ("success"         (make-stanza stanza 'success-stanza))
+        ("proceed"         (make-stanza stanza 'proceed-stanza))
+        ("challenge"       (make-stanza stanza 'sasl-challenge-stanza))
+        ("iq"              (make-stanza stanza 'iq-stanza))
+        ("presence"        (make-stanza stanza 'presence-stanza))
+        (:default          (dispatch-stanza stanza 'stanza))))))
 
-;; TODO: dispatch over all heirs of stanzas.
-(defmethod xml-to-stanza ((stanza stanza))
-  (let ((qname (dom:node-name (dom:first-child (xml-node stanza)))))
-    (string-case qname
-      ("stream:stream"   (make-stanza stanza 'stream-stanza))
-      ("message"         (make-stanza stanza 'message-stanza))
-      ("failure"         (make-stanza stanza 'failure-stanza))
-      ("success"         (make-stanza stanza 'success-stanza))
-      ("proceed"         (make-stanza stanza 'proceed-stanza))
-      ("challenge"       (make-stanza stanza 'sasl-challenge-stanza))
-      ("iq"              (make-stanza stanza 'iq-stanza))
-      ("presence"        (make-stanza stanza 'presence-stanza))
-      (:default          (dispatch-stanza stanza 'stanza)))))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defstanza unknown-stanza (stanza)
+    ()
+  
+  (print-object ((obj) stream)
+    (print-unreadable-object (obj stream :type t :identity t)
+      (format stream "Unknown type of stanza: ~A" (dom:node-name (dom:first-child (xml-node obj))))))
 
-(defclass unknown-stanza (stanza)
-  ())
-
-(defmethod print-object ((obj unknown-stanza) stream)
-  (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "Unknown type of stanza: ~A" (dom:node-name (dom:first-child (xml-node obj))))))
-        
-(defmethod xml-to-stanza ((stanza unknown-stanza))
-  stanza)
-
-
-(defclass stream-stanza (stanza)
-  ((to
-    :accessor to
-    :initarg :to
-    :initform "")
-   (from
-    :accessor from
-    :initarg :from
-    :initform "")
-   (id
-    :accessor id
-    :initarg :id
-    :initform nil)
-   (xml-lang
-    :accessor xml-lang
-    :initarg :xml-lang
-    :initform "en")
-   (xmlns
-    :accessor xmlns
-    :initarg :xmlns
-    :initform "jabber:client")
-   (xmlns-stream
-    :accessor xmlns-stream
-    :initarg :xmlns-stream
-    :initform "http://etherx.jabber.org/streams")
-   (version
-    :accessor version
-    :initarg :version
-    :initform "1.0"))
-  (:documentation
-   "Actually is not a stanza, but it's xml chunk, so I called it stanza ;).
-This class describes <stream:stream/> - XML entity which RFC 6120 calls `stream'."))
-
-(defmethod print-object ((obj stream-stanza) stream)
-  (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "to: ~A, from: ~A, id: ~A, xml-lang: ~A, xmlns: ~A, xmlns-stream: ~A, version: ~A"
-            (to obj) (from obj) (id obj) (xml-lang obj) (xmlns obj) (xmlns-stream obj) (version obj))))
-
-(defmethod make-stanza ((stanza stream-stanza) class-name)
-  (let* ((xml-node (xml-node stanza))
-         (stream-node (dom:first-child xml-node)))
-    (xml-to-stanza (make-instance class-name
-                                  :xml-node     xml-node
-                                  :to           (dom:get-attribute stream-node "to")
-                                  :from         (dom:get-attribute stream-node "from")
-                                  :id           (dom:get-attribute stream-node "id")
-                                  :xml-lang     (dom:get-attribute stream-node "xml:lang")
-                                  :xmlns        (dom:get-attribute stream-node "xmlns")
-                                  :xmlns-stream (dom:get-attribute stream-node "xmlns:stream")
-                                  :version      (dom:get-attribute stream-node "version")))))
-
-(defmethod xml-to-stanza ((stanza stream-stanza))
-  (let* ((xml-node (xml-node stanza))
-         (child (dom:first-child (dom:first-child xml-node)))
-         (child-qname (dom:node-name child)))
-    (string-case child-qname
-      ("stream:features" (make-stanza stanza 'stream-features-stanza))
-      ("stream:error"    (make-stanza stanza 'stream-error-stanza))
-      (:default          (dispatch-stanza stanza 'stream-stanza)))))
-
-(defmethod stanza-to-xml ((stanza stream-stanza))
-  (cxml:with-element "stream:stream"
-    (cxml:attribute "to" (to stanza))
-    (cxml:attribute "id" (id stanza))
-    (cxml:attribute "xmlns" (xmlns stanza))
-    (cxml:attribute "xmlns:stream" (xmlns-stream stanza))
-    (cxml:attribute "version" (version stanza))))
-
-
-(defclass stream-features-stanza (stream-stanza)
-  ((features
-   :accessor features
-   :initarg :features
-   :initform nil
-   :documentation
-   "List of cons' features, i.e. ((\"startls\" . t) (\"mechanisms\" . nil) ...)."))
-  (:documentation
-   "Subclass of `stream-stanza' which describes <stream:stream><stream:features/><stream:stream/>
-entity. It is returned by a receiving entity (e.g. on client-to-server communication is a server)."))
-
-(defmethod print-object ((obj stream-features-stanza) stream)
-  (print-unreadable-object (obj stream :type t :identity t)
-    (mapcar #'(lambda (feature)
-                (let ((feature-name (car feature))
-                      (feature-required (cdr feature)))
-                  (format stream "{~A -> ~A} " feature-name
-                          (if feature-required
-                              "required"
-                              "not required"))))
-            (features obj)))
-  (call-next-method obj stream))
-
-(defmethod xml-to-stanza ((stanza stream-features-stanza))
-  (let ((features (features stanza)))
-    (dom:map-node-list
-     #'(lambda (node)
-         (let* ((feature-name (dom:node-name node))
-                (feature-required (string-case feature-name
-                                    ("session"    t) ;; TODO: implement required checking.
-                                    ("mechanisms" t) ;; These four features are 
-                                    ("starttls"   t) ;; mandatory-to-negitiate for 
-                                    ("bind"       t) ;; client and server, see RFC 6120 and RFC 3921.
-                                    (:default     nil)))) ;; TODO: check on <required/> element
-           (setf features (cons (cons feature-name feature-required) features))))
-     (dom:child-nodes (dom:first-child (dom:first-child (xml-node stanza)))))
-    (setf (features stanza) features)
+  (xml-to-stanza ((stanza))
     stanza))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defstanza stream-stanza (stanza)
+    (id (to "") (from "") (xml-lang "en") (xmlns "jabber:client")
+        (xmlns-stream "http://etherx.jabber.org/streams") (version "1.0"))
+    
+  (print-object ((obj) stream)
+    (print-unreadable-object (obj stream :type t :identity t)
+      (format stream "to: ~A, from: ~A, id: ~A, xml-lang: ~A, xmlns: ~A, xmlns-stream: ~A, version: ~A"
+              (to obj) (from obj) (id obj) (xml-lang obj) (xmlns obj) (xmlns-stream obj) (version obj))))
+
+
+  (make-stanza ((stanza) class-name)
+    (let* ((xml-node (xml-node stanza))
+           (stream-node (dom:first-child xml-node)))
+      (xml-to-stanza (make-instance class-name
+                                    :xml-node     xml-node
+                                    :to           (dom:get-attribute stream-node "to")
+                                    :from         (dom:get-attribute stream-node "from")
+                                    :id           (dom:get-attribute stream-node "id")
+                                    :xml-lang     (dom:get-attribute stream-node "xml:lang")
+                                    :xmlns        (dom:get-attribute stream-node "xmlns")
+                                    :xmlns-stream (dom:get-attribute stream-node "xmlns:stream")
+                                    :version      (dom:get-attribute stream-node "version")))))
+
+  (xml-to-stanza ((stanza))
+    (let* ((xml-node (xml-node stanza))
+           (child (dom:first-child (dom:first-child xml-node)))
+           (child-qname (dom:node-name child)))
+      (string-case child-qname
+        ("stream:features" (make-stanza stanza 'stream-features-stanza))
+        ("stream:error"    (make-stanza stanza 'stream-error-stanza))
+        (:default          (dispatch-stanza stanza 'stream-stanza)))))
+
+  (stanza-to-xml ((stanza))
+    (cxml:with-element "stream:stream"
+      (cxml:attribute "to" (to stanza))
+      (cxml:attribute "id" (id stanza))
+      (cxml:attribute "xmlns" (xmlns stanza))
+      (cxml:attribute "xmlns:stream" (xmlns-stream stanza))
+      (cxml:attribute "version" (version stanza)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+(defstanza stream-features-stanza (stream-stanza)
+    (features)
+
+  (print-object ((obj) stream)
+    (print-unreadable-object (obj stream :type t :identity t)
+      (mapcar #'(lambda (feature)
+                  (let ((feature-name (car feature))
+                        (feature-required (cdr feature)))
+                    (format stream "{~A -> ~A} " feature-name
+                            (if feature-required
+                                "required"
+                                "not required"))))
+              (features obj)))
+    (call-next-method obj stream))
+
+  (xml-to-stanza ((stanza))
+    (let ((features (features stanza)))
+      (dom:map-node-list
+       #'(lambda (node)
+           (let* ((feature-name (dom:node-name node))
+                  (feature-required (string-case feature-name
+                                      ("session"    t) ;; TODO: implement required checking.
+                                      ("mechanisms" t) ;; These four features are 
+                                      ("starttls"   t) ;; mandatory-to-negitiate for 
+                                      ("bind"       t) ;; client and server, see RFC 6120 and RFC 3921.
+                                      (:default     nil)))) ;; TODO: check on <required/> element
+             (setf features (cons (cons feature-name feature-required) features))))
+       (dom:child-nodes (dom:first-child (dom:first-child (xml-node stanza)))))
+      (setf (features stanza) features)
+      stanza)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+   
 (defclass stream-close-stanza (stream-stanza) ())
 
 (defmethod xml-to-stanza ((stanza stream-close-stanza))

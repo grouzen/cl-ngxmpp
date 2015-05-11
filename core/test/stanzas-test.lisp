@@ -16,6 +16,8 @@
 (deftestsuite stanzas-test (cl-ngxmpp-test)
   ())
 
+(deftestsuite stanza-defstanza-test (stanzas-test)
+  ())
 
 (deftestsuite stanzas-xml-utils-test (stanzas-test)
   ((xml-node (string-to-xml-node
