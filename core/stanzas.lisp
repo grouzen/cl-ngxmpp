@@ -7,9 +7,11 @@
 
 (in-package #:cl-ngxmpp)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Macros for receiving/sending stanzas.
 ;;
+
 (defmacro with-stanza-output ((xml-stream) &body body)
   `(with-stream-xml-output (,xml-stream)
      (stanza-to-xml ,@body)))
@@ -19,6 +21,11 @@
     `(with-stream-xml-input (,xml-stream ,xml-input)
        (let ((,stanza-input (xml-to-stanza (make-instance 'stanza :xml-node ,xml-input))))
          ,@body))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; CXML-related stuff
+;;
 
 (defun get-elements-by-name (node el-name)
   (let ((elems nil))
@@ -37,13 +44,11 @@
     (if (null child)
         ""
         (dom:data child))))
-    
 
-;; Just an idea
-;;(defmacro with-string-case ((needle ???) &body cases)
-;;  `(string-case ,needle
-;;     ,@cases
-;;     (:default (dispatch-stanza ???)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
+;;
+;; The 'protocol' for defining stanzas
+;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *stanzas-dispatchers* nil))
@@ -84,7 +89,11 @@ needs to be implemented only for parental classes"))
 (define-condition handle-stanza-error (simple-condition) ())
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
+;;
+;; Use `defstanza` macro to define new stanzas
+;;
+;; Example of usage:
+;;
 ;; (defstanza stanza ()
 ;;     (xml-node)
 ;;   (handle-stanza ((stanza))
@@ -99,6 +108,7 @@ needs to be implemented only for parental classes"))
 ;;
 ;;   (xml-to-stanza (stanza)
 ;;     ...))
+;;
 
 (defmacro defstanza (stanza-name superclasses slots &rest methods)
   `(progn
@@ -185,6 +195,9 @@ needs to be implemented only for parental classes"))
     stanza))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Stream stanzas
+;;
 
 (defstanza stream-stanza (stanza)
     (id (to "") (from "") (xml-lang "en") (xmlns "jabber:client")

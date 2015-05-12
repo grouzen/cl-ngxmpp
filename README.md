@@ -19,7 +19,6 @@ TODO:
 - [X] Fix Travis-CI build
 - [ ] Develop a high-level interface
 - [X] Code DSL to have more concise way to define stanzas
-- [ ] Abstract over boilerplate for debug output
 - [ ] Debug levels, and generic `print-debug` function
 - [ ] Use short package nicknames instead of long names
 - [ ] Write more descriptive README
@@ -33,7 +32,7 @@ First you need to load examples system:
 ```commonlisp
 (ql:quickload :cl-ngxmpp-client.examples)
 ```  
-There is echo-bot.lisp example, to run it print:   
+There is echo-bot.lisp example, to run it type:   
 ```commonlisp
 (cl-ngxmpp-client.examples.echo-bot:run  
     :server-hostname "<your jabber server>"  
