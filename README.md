@@ -23,6 +23,8 @@ TODO:
 - [ ] Use short package nicknames instead of long names
 - [ ] Write more descriptive README
 - [ ] Re-think and (it would be better) rewrite the code in `client/xeps/xeps.lisp`
+- [ ] Develop a simple bot for conferences based on 'Markov chains' as another example
+- [ ] Rewrite tests for client part in such way so that there are no dependencies from external services
 
 Examples:
 ================================================================================

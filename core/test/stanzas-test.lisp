@@ -7,17 +7,76 @@
 
 (in-package #:cl-ngxmpp-test)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defun string-to-xml-node (str)
   (cxml:parse str (cxml-dom:make-dom-builder)))
 
 (defun string-to-stanza (stanza-class str)
   (make-instance stanza-class :xml-node (string-to-xml-node str)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Basic suite
+;;
+
 (deftestsuite stanzas-test (cl-ngxmpp-test)
   ())
 
-(deftestsuite stanza-defstanza-test (stanzas-test)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Suite for defstanza macros
+;;
+
+(deftestsuite stanzas-defstanza-test (stanzas-test)
   ())
+
+(deftestsuite stanzas-defstanza-method%-test (stanzas-defstanza-test)
+  ())
+
+(addtest (stanzas-defstanza-method%-test)
+  wrong-method-arguments-format
+  (ensure-condition 'xmpp%:defstanza-method%-error
+    (macroexpand-1 
+     '(xmpp%::defstanza-method% stanza xml-to-stanza ((o (b d e) c) a) (body)))))
+
+(addtest (stanzas-defstanza-method%-test)
+  correct-auto-addition-of-stanza-class-name-to-arguments
+  (let* ((args (third (macroexpand-1
+                       '(xmpp%::defstanza-method% stanza
+                         xml-to-stanza ((a (c d)) a)
+                         (body)))))
+         (arg-a (first args)))
+    (ensure-same (second arg-a) 'stanza)))
+
+(addtest (stanzas-defstanza-method%-test)
+  simple-arg-is-still-simple
+  (let* ((args (third (macroexpand-1
+                       '(xmpp%::defstanza-method% stanza
+                         xml-to-stanza ((a b) c) (body)))))
+         (arg-c (third args)))
+    (ensure-same arg-c 'c)))
+
+
+(deftestsuite stanzas-defstanza-class%-test (stanzas-defstanza-test)
+  ())
+
+(addtest (stanzas-defstanza-class%-test)
+  wrong-slots-format
+  (ensure-condition 'xmpp%:defstanza-class%-error
+    (macroexpand-1
+     '(xmpp%::defstanza-class% stanza-error (stanza) (a (b c) (d e f))))))
+
+(addtest (stanzas-defstanza-class%-test)
+  slots-are-in-correct-form
+  (ensure-no-warning
+   (macroexpand-1
+    '(xmpp%::defstanza-class% stanza () (a (b "initval"))))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Utils
+;;
 
 (deftestsuite stanzas-xml-utils-test (stanzas-test)
   ((xml-node (string-to-xml-node
@@ -64,6 +123,10 @@
   get-elements-by-name-nothing
   (ensure-null (xmpp%::get-elements-by-name (dom:first-child xml-node) "zero")))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; dispatch-stanza function
+;;
 
 (deftestsuite stanzas-dispatcher-test (stanzas-test)
   ((xeps-list '("multi-user-chat" "delayed-delivery"))
@@ -103,6 +166,14 @@
   (ensure-same (xmpp%::dispatch-stanza message-stanza-delayed 'xmpp%:message-stanza)
                'xmpp%::delayed-delivery-message-stanza))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Stanzas
+;;
+
+;;
+;; TODO: come up with a better solution for testing stanzas
+;;
 
 (deftestsuite stream-stanza-stanzas-test (stanzas-test)
   ((features-stanza

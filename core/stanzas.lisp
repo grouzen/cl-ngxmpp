@@ -110,10 +110,40 @@ needs to be implemented only for parental classes"))
 ;;     ...))
 ;;
 
+(define-condition defstanza-method%-error (simple-condition)
+  ((arg :reader arg :initarg :arg))
+  (:report (lambda (condition stream)
+             (format stream
+                     "Argument ~A is neither a non-NIL symbol nor a list of form '(obj class)"
+                     (arg condition)))))
+
+(define-condition defstanza-class%-error (simple-condition)
+  ((slot :reader slot :initarg :slot))
+  (:report (lambda (condition stream)
+             (format stream
+                     "Slot ~A is neither a non-NIL symbol nor a list of form '(name initform)"
+                     (slot condition)))))
+
 (defmacro defstanza (stanza-name superclasses slots &rest methods)
   `(progn
      (defstanza-class% ,stanza-name ,superclasses ,slots)
      (defstanza-methods% ,stanza-name ,methods)))
+
+(defmacro defstanza-class% (stanza-name superclasses slots)
+  (let ((slotz (mapcar #'(lambda (slot)
+                           (let* ((ds (cond ((listp slot)
+                                             (if (> (length slot) 2)
+                                                 (error 'defstanza-class%-error :slot slot)
+                                                 slot))
+                                            (t (list slot nil))))
+                                  (name (first ds))
+                                  (initform (second ds)))
+                             (list name
+                                   :accessor name
+                                   :initarg (alexandria:make-keyword name)
+                                   :initform initform)))
+                       slots)))
+    `(defclass ,stanza-name (,@superclasses) (,@slotz))))
 
 (defmacro defstanza-methods% (stanza-name methods)
   `(list ,@(mapcar #'(lambda (method)
@@ -129,29 +159,13 @@ needs to be implemented only for parental classes"))
   (let ((obj-args (mapcar #'(lambda (arg)
                               (cond ((listp arg)
                                      (if (> (length arg) 2)
-                                         (error "Argument ~A is neither a non-NIL symbol nor a list of form '(obj class)" arg)
+                                         (error 'defstanza-method%-error :arg arg)
                                          arg))
                                     (t (list arg stanza-name))))
                           (first method-args)))
         (rest-args (cdr method-args)))
     `(defmethod ,method-name (,@obj-args ,@rest-args)
        ,@method-body)))
-
-(defmacro defstanza-class% (stanza-name superclasses slots)
-  (let ((slotz (mapcar #'(lambda (slot)
-                           (let* ((ds (cond ((listp slot)
-                                             (if (> (length slot) 2)
-                                                 (error "Slot ~A is neither a non-NIL symbol nor a list of form '(name initform)" slot)
-                                                 slot))
-                                            (t (list slot nil))))
-                                  (name (first ds))
-                                  (initform (second ds)))
-                             (list name
-                                   :accessor name
-                                   :initarg (alexandria:make-keyword name)
-                                   :initform initform)))
-                       slots)))
-    `(defclass ,stanza-name (,@superclasses) (,@slotz))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -162,9 +176,10 @@ needs to be implemented only for parental classes"))
 
 (defstanza stanza ()
     (xml-node)
+  
   (handle-stanza ((stanza))
     (error 'handle-stanza-error
-           :format-control "Default stanza handler called. Please define handler for this type of stanza"))
+           :format-control "Default stanza handler was called. Please define handler for this type of stanza"))
  
   (make-stanza ((stanza) class-name)
     (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))

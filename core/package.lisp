@@ -60,4 +60,6 @@
            #:handle-stanza-error
            #:negotiate-sasl-error
            #:stanza-reader-error
-           #:connection-error))
+           #:connection-error
+           #:defstanza-method%-error
+           #:defstanza-class%-error))
