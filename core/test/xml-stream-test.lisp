@@ -11,8 +11,8 @@
   (write str :stream stream)
   (force-output stream))
 
-(defun stanza-reader-read (stream &key (reader 'cl-ngxmpp:stanza-reader))
-  (cl-ngxmpp:stanza-reader-read-stream
+(defun stanza-reader-read (stream &key (reader 'xmpp%:stanza-reader))
+  (xmpp%:stanza-reader-read-stream
    (make-instance reader :stanza-stream stream)))
 
 
@@ -22,38 +22,38 @@
 
 (deftestsuite xml-stream-actions-test (xml-stream-test)
   ((xml-stream nil)
-   (connection (make-instance 'cl-ngxmpp:connection
-                              :adapter  (make-instance 'cl-ngxmpp:usocket-adapter)
+   (connection (make-instance 'xmpp%:connection
+                              :adapter  (make-instance 'xmpp%:usocket-adapter)
                               :hostname "ch3kr.net"
                               :port     5222))
    (debuggable nil))
   (:setup (progn
-            (cl-ngxmpp:open-connection connection)
-            (when (cl-ngxmpp:connectedp connection)     
-              (setf xml-stream (make-instance 'cl-ngxmpp:xml-stream
+            (xmpp%:open-connection connection)
+            (when (xmpp%:connectedp connection)     
+              (setf xml-stream (make-instance 'xmpp%:xml-stream
                                               :connection connection
                                               :debuggable debuggable))))))
 
 
 (deftestsuite xml-stream-actions-open-stream-test (xml-stream-actions-test)
   ()
-  (:teardown (when (cl-ngxmpp:openedp xml-stream)
-               (cl-ngxmpp:close-stream xml-stream)
-               (when (cl-ngxmpp:connectedp connection)
-                 (cl-ngxmpp:close-connection connection)))))
+  (:teardown (when (xmpp%:openedp xml-stream)
+               (xmpp%:close-stream xml-stream)
+               (when (xmpp%:connectedp connection)
+                 (xmpp%:close-connection connection)))))
 
 (addtest (xml-stream-actions-open-stream-test)
   open-stream-with-opened-connection
   (progn
-    (cl-ngxmpp:open-stream xml-stream)
-    (ensure (cl-ngxmpp:openedp xml-stream))))
+    (xmpp%:open-stream xml-stream)
+    (ensure (xmpp%:openedp xml-stream))))
 
 #+sbcl
 (addtest (xml-stream-actions-open-stream-test)
   open-stream-with-closed-connection
   (progn
-    (cl-ngxmpp:close-connection (cl-ngxmpp::connection xml-stream))
-    (ensure-condition sb-int:closed-stream-error (cl-ngxmpp:open-stream xml-stream))))
+    (xmpp%:close-connection (xmpp%::connection xml-stream))
+    (ensure-condition sb-int:closed-stream-error (xmpp%:open-stream xml-stream))))
 
 
 (deftestsuite xml-stream-stanza-reader-test (xml-stream-test)
@@ -78,19 +78,19 @@
   read-correct-xml
   (progn
     (write-data correct-xml stream-out)
-    (ensure-null (not (cl-ngxmpp::result (stanza-reader-read stream-in))))))
+    (ensure-null (not (xmpp%::result (stanza-reader-read stream-in))))))
 
 (addtest (xml-stream-stanza-reader-test)
   read-incorrect-xml
   (progn
     (write-data incorrect-xml stream-out)
-    (ensure-condition cl-ngxmpp:stanza-reader-error (stanza-reader-read stream-in))))
+    (ensure-condition xmpp%:stanza-reader-error (stanza-reader-read stream-in))))
 
 (addtest (xml-stream-stanza-reader-test)
   read-empty-xml
   (progn
     (write-data empty-xml stream-out)
-    (ensure-condition cl-ngxmpp:stanza-reader-error (stanza-reader-read stream-in))))
+    (ensure-condition xmpp%:stanza-reader-error (stanza-reader-read stream-in))))
 
 
 (deftestsuite xml-stream-stanza-reader-header-test (xml-stream-stanza-reader-test)
@@ -101,17 +101,17 @@
   (progn
     (write-data correct-header stream-out)
     (let ((reader (stanza-reader-read stream-in
-                                      :reader 'cl-ngxmpp:stanza-reader-header)))
-      (ensure-same 1 (cl-ngxmpp::depth reader)))))
+                                      :reader 'xmpp%:stanza-reader-header)))
+      (ensure-same 1 (xmpp%::depth reader)))))
 
 (addtest (xml-stream-stanza-reader-header-test)
   read-correct-header-state
   (progn
     (write-data correct-header stream-out)
     (ensure-same :node-opened
-                 (cl-ngxmpp::state (stanza-reader-read
+                 (xmpp%::state (stanza-reader-read
                                     stream-in
-                                    :reader 'cl-ngxmpp:stanza-reader-header)))))
+                                    :reader 'xmpp%:stanza-reader-header)))))
 
 
 (deftestsuite xml-stream-stanza-reader-features-test (xml-stream-stanza-reader-test)
@@ -124,15 +124,15 @@
   (progn
     (write-data correct-features stream-out)
     (ensure-same :node-closed
-                 (cl-ngxmpp::state (stanza-reader-read
+                 (xmpp%::state (stanza-reader-read
                                     stream-in
-                                    :reader 'cl-ngxmpp:stanza-reader-features)))))
+                                    :reader 'xmpp%:stanza-reader-features)))))
 
 (addtest (xml-stream-stanza-reader-features-test)
   read-incorrect-features
   (progn
     (write-data incorrect-features stream-out)
-    (ensure-condition cl-ngxmpp:stanza-reader-error
+    (ensure-condition xmpp%:stanza-reader-error
       (stanza-reader-read stream-in
-                          :reader 'cl-ngxmpp:stanza-reader-features))))
+                          :reader 'xmpp%:stanza-reader-features))))
 

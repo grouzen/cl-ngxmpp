@@ -11,44 +11,44 @@
   ((client          nil)
    (server-hostname "ch3kr.net")
    (server-port     5222)
-   (adapter         (make-instance 'cl-ngxmpp:usocket-adapter))))
+   (adapter         (make-instance 'xmpp%:usocket-adapter))))
 
 
 (deftestsuite client-connect/disconnect-test (client-test)
   ()
   (:setup    (setf client
-                   (make-instance 'cl-ngxmpp-client:client
+                   (make-instance 'xmpp:client
                                   :server-hostname server-hostname
                                   :server-port     server-port
                                   :debuggable      nil
                                   :adapter         adapter)))
-  (:teardown (cl-ngxmpp-client:disconnect client)))
+  (:teardown (xmpp:disconnect client)))
 
 (addtest (client-connect/disconnect-test)
   correct-open
   (progn
-    (cl-ngxmpp-client:connect client)
-    (ensure (cl-ngxmpp:openedp (cl-ngxmpp-client::xml-stream client)))))
+    (xmpp:connect client)
+    (ensure (xmpp%:openedp (xmpp::xml-stream client)))))
 
 (addtest (client-connect/disconnect-test)
   incorrect-hostname-open
   (progn
-    (setf (cl-ngxmpp-client::server-hostname client) "incorrect-hostname")
-    (ensure-condition cl-ngxmpp:connection-error
-      (cl-ngxmpp-client:connect client))))
+    (setf (xmpp::server-hostname client) "incorrect-hostname")
+    (ensure-condition xmpp%:connection-error
+      (xmpp:connect client))))
 
 (addtest (client-connect/disconnect-test)
   incorrect-port-open
   (progn
-    (setf (cl-ngxmpp-client::server-port client) 123)
-    (ensure-condition cl-ngxmpp:connection-error
-      (cl-ngxmpp-client:connect client))))
+    (setf (xmpp::server-port client) 123)
+    (ensure-condition xmpp%:connection-error
+      (xmpp:connect client))))
 
 (addtest (client-connect/disconnect-test)
   disconnect-from-connected
   (progn
-    (cl-ngxmpp-client:connect client)
-    (ensure (cl-ngxmpp-client:disconnect client))))
+    (xmpp:connect client)
+    (ensure (xmpp:disconnect client))))
 
 
 (deftestsuite client-authorize-test (client-test)
@@ -56,18 +56,18 @@
    (password "clngxmpp"))
   (:setup (progn
             (setf client
-                   (make-instance 'cl-ngxmpp-client:client
+                   (make-instance 'xmpp:client
                                   :server-hostname server-hostname
                                   :server-port     server-port
                                   :debuggable      nil
                                   :adapter         adapter))
-            (cl-ngxmpp-client:connect client))))
+            (xmpp:connect client))))
 
 (addtest (client-authorize-test)
   correct-authorize
   (progn
-    (cl-ngxmpp-client:authorize client
+    (xmpp:authorize client
                                 :username username
                                 :password password)
     (ensure
-     (cl-ngxmpp:sasl-negotiatedp (cl-ngxmpp-client::xml-stream client)))))
+     (xmpp%:sasl-negotiatedp (xmpp::xml-stream client)))))

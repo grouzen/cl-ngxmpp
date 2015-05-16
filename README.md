@@ -23,7 +23,7 @@ TODO:
 - [X] Re-use the brand new `define-stanza` in a definition of `define-xep` method
 - [ ] Move `handle-stanza` generic method from `xmpp%` package into `xmpp` (since, it's not a part of stanza's protocol anymore)
 - [ ] Debug levels, and generic `print-debug` function
-- [ ] Use short package nicknames instead of long names
+- [X] Use short package nicknames instead of long names
 - [ ] Write more descriptive README
 - [ ] Re-think and (it would be better) rewrite the code in `client/xeps/xeps.lisp`
 - [ ] Develop a simple bot for conferences based on 'Markov chains' as another example

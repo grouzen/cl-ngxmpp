@@ -8,11 +8,11 @@
 (in-package #:cl-ngxmpp-test)
 
 (deftestsuite usocket-adapter-test (cl-ngxmpp-test)
-  ((adapter (make-instance 'cl-ngxmpp:usocket-adapter))
+  ((adapter (make-instance 'xmpp%:usocket-adapter))
    (hostname "ch3kr.net")
    (port     5222))
-  (:teardown (when (cl-ngxmpp::adapter-connectedp adapter)
-               (cl-ngxmpp::adapter-close-connection adapter))))
+  (:teardown (when (xmpp%::adapter-connectedp adapter)
+               (xmpp%::adapter-close-connection adapter))))
 
 
 (deftestsuite usocket-adapter-connectedp-test (usocket-adapter-test)
@@ -21,12 +21,12 @@
 (addtest (usocket-adapter-connectedp-test)
   connected-adapter
   (progn
-    (cl-ngxmpp::adapter-open-connection adapter hostname port)
-    (ensure (cl-ngxmpp::adapter-connectedp adapter))))
+    (xmpp%::adapter-open-connection adapter hostname port)
+    (ensure (xmpp%::adapter-connectedp adapter))))
 
 (addtest (usocket-adapter-connectedp-test)
   closed-adapter
-  (ensure-null (cl-ngxmpp::adapter-connectedp adapter)))
+  (ensure-null (xmpp%::adapter-connectedp adapter)))
   
 
 (deftestsuite usocket-adapter-open-test (usocket-adapter-test)
@@ -35,36 +35,36 @@
 (addtest (usocket-adapter-open-test)
   correct-open-test
   (progn
-    (cl-ngxmpp::adapter-open-connection adapter hostname port)
-    (ensure (cl-ngxmpp::adapter-connectedp adapter))))
+    (xmpp%::adapter-open-connection adapter hostname port)
+    (ensure (xmpp%::adapter-connectedp adapter))))
 
 (addtest (usocket-adapter-open-test)
   incorrect-hostname-open-test
-  (ensure-condition cl-ngxmpp:connection-error
-    (cl-ngxmpp::adapter-open-connection adapter "unknown.unknown" port)))
+  (ensure-condition xmpp%:connection-error
+    (xmpp%::adapter-open-connection adapter "unknown.unknown" port)))
 
 (addtest (usocket-adapter-open-test)
   incorrect-port-open-test
-  (ensure-condition cl-ngxmpp:connection-error
-    (cl-ngxmpp::adapter-open-connection adapter hostname 123)))
+  (ensure-condition xmpp%:connection-error
+    (xmpp%::adapter-open-connection adapter hostname 123)))
 
 
 (deftestsuite usocket-adapter-close-test (usocket-adapter-test)
   ()
-  (:setup (cl-ngxmpp::adapter-open-connection adapter hostname port)))
+  (:setup (xmpp%::adapter-open-connection adapter hostname port)))
 
 (addtest (usocket-adapter-close-test)
   close-correct-opened-adapter
   (progn
-    (cl-ngxmpp::adapter-close-connection adapter)
-    (ensure-null (cl-ngxmpp::adapter-connectedp adapter))))
+    (xmpp%::adapter-close-connection adapter)
+    (ensure-null (xmpp%::adapter-connectedp adapter))))
 
 (addtest (usocket-adapter-close-test)
   close-closed-adapter
   (progn
-    (cl-ngxmpp::adapter-close-connection adapter)
-    (cl-ngxmpp::adapter-close-connection adapter)
-    (ensure-null (cl-ngxmpp::adapter-connectedp adapter))))
+    (xmpp%::adapter-close-connection adapter)
+    (xmpp%::adapter-close-connection adapter)
+    (ensure-null (xmpp%::adapter-connectedp adapter))))
 
 
 (deftestsuite usocket-adapter-read/write-stream-test (usocket-adapter-test)
@@ -75,40 +75,40 @@
                      version='1.0'
                      xmlns='jabber:client'>")
    (stream-close  "</stream:stream>"))
-  (:setup (cl-ngxmpp::adapter-open-connection adapter hostname port)))
+  (:setup (xmpp%::adapter-open-connection adapter hostname port)))
 
 (addtest (usocket-adapter-read/write-stream-test)
   write-to-opened-connection
-  (ensure (cl-ngxmpp::adapter-write-to-stream adapter stream-header)))
+  (ensure (xmpp%::adapter-write-to-stream adapter stream-header)))
 
 #+sbcl
 (addtest (usocket-adapter-read/write-stream-test)
   write-to-closed-connection
   (progn
-    (cl-ngxmpp::adapter-close-connection adapter)
+    (xmpp%::adapter-close-connection adapter)
     (ensure-condition sb-int:closed-stream-error
-                       (cl-ngxmpp::adapter-write-to-stream adapter "<?xml?>"))))
+                       (xmpp%::adapter-write-to-stream adapter "<?xml?>"))))
   
 (addtest (usocket-adapter-read/write-stream-test)
   read-from-opened-stream
   (progn
-    (cl-ngxmpp::adapter-write-to-stream adapter "<?xml?>")
+    (xmpp%::adapter-write-to-stream adapter "<?xml?>")
     (ensure-same (xmpp%:resolve-async-value
-                  (cl-ngxmpp::adapter-read-from-stream adapter
-                                                       :stanza-reader 'cl-ngxmpp:stanza-reader-header))
+                  (xmpp%::adapter-read-from-stream adapter
+                                                       :stanza-reader 'xmpp%:stanza-reader-header))
                  stream-header)))
 
 (addtest (usocket-adapter-read/write-stream-test)
   read-from-closed-stream
   (progn
-    (cl-ngxmpp::adapter-write-to-stream adapter "<?xml?>")
-    (cl-ngxmpp::adapter-read-from-stream adapter :stanza-reader 'cl-ngxmpp:stanza-reader-header)
-    (cl-ngxmpp::adapter-write-to-stream adapter stream-open)
-    (cl-ngxmpp::adapter-read-from-stream adapter :stanza-reader 'cl-ngxmpp:stanza-reader-features)
-    (cl-ngxmpp::adapter-write-to-stream adapter stream-close)
-    (ensure-condition cl-ngxmpp:stanza-reader-error
+    (xmpp%::adapter-write-to-stream adapter "<?xml?>")
+    (xmpp%::adapter-read-from-stream adapter :stanza-reader 'xmpp%:stanza-reader-header)
+    (xmpp%::adapter-write-to-stream adapter stream-open)
+    (xmpp%::adapter-read-from-stream adapter :stanza-reader 'xmpp%:stanza-reader-features)
+    (xmpp%::adapter-write-to-stream adapter stream-close)
+    (ensure-condition xmpp%:stanza-reader-error
       (xmpp%:resolve-async-value
-       (cl-ngxmpp::adapter-read-from-stream
+       (xmpp%::adapter-read-from-stream
         adapter
-        :stanza-reader 'cl-ngxmpp:stanza-reader))
+        :stanza-reader 'xmpp%:stanza-reader))
       "</stream:stream>")))

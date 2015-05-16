@@ -33,7 +33,7 @@
                            `,stanza-class
                            (alexandria:symbolicate `,xep '- `,stanza-class)))
                       'cl-ngxmpp)))
-    `(defmethod cl-ngxmpp:handle-stanza ((,stanza ,namespace-stanza-class))
+    `(defmethod xmpp%:handle-stanza ((,stanza ,namespace-stanza-class))
        ,@body)))
          
 (defmacro define-methods-with-xep ((xep-name) &body methods-definitions)
@@ -50,7 +50,7 @@
 
 (defmacro define-xep-method% (xep-name (method-name (&rest formal-params)) &body body)
   (let ((xep-name-keyword (gensym "xep-name-keyword")))
-    `(let* ((,xep-name-keyword (cl-ngxmpp:string-to-keyword (symbol-name ',xep-name)))
+    `(let* ((,xep-name-keyword (xmpp%:string-to-keyword (symbol-name ',xep-name)))
             (xep-methods (getf *xeps-methods* ,xep-name-keyword)))
        (unless xep-methods
          (append (list ,xep-name-keyword nil) *xeps-methods*))
@@ -70,12 +70,12 @@
     `(make-instance ',namespace-stanza-class ,@body)))
 
 (defun use-xeps (names)
-  (cl-ngxmpp:use-xeps names)
+  (xmpp%:use-xeps names)
   (loop
      :for name :in names
-     :do (let ((xep-methods (getf *xeps-methods* (cl-ngxmpp:string-to-keyword name))))
+     :do (let ((xep-methods (getf *xeps-methods* (xmpp%:string-to-keyword name))))
            ;; TODO: throw error that xep doesn't exist
-           (when (and (cl-ngxmpp:xep-exists-p name) xep-methods)
+           (when (and (xmpp%:xep-exists-p name) xep-methods)
              (loop
                 :for method-closure :in xep-methods
                 :do (funcall method-closure))))))

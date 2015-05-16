@@ -14,7 +14,7 @@
 
 (defvar *client* nil)
 
-(cl-ngxmpp-client:use-xeps '("delayed-delivery"
+(xmpp:use-xeps '("delayed-delivery"
                              "multi-user-chat"))
 
 ;;
@@ -24,73 +24,73 @@
   (write-line "Default handler."))
 
 (define-stanza-handler ((stanza presence-show-stanza))
-  (let ((from (cl-ngxmpp:from stanza))
-        (to   (cl-ngxmpp:to stanza))
-        (show (cl-ngxmpp:show stanza)))
+  (let ((from (xmpp%:from stanza))
+        (to   (xmpp%:to stanza))
+        (show (xmpp%:show stanza)))
     (write-line (format nil "Presence ~A -> ~A: ~A" from to show))))
 
 (define-stanza-handler ((stanza presence-subscribe-stanza))
-  (let ((from   (cl-ngxmpp:from stanza))
-        (status (cl-ngxmpp:status stanza)))
+  (let ((from   (xmpp%:from stanza))
+        (status (xmpp%:status stanza)))
     (write-line (format nil "Presence ~A wants to subscribe to you, with status ~A"
                         from status))))
           
 (define-stanza-handler ((stanza iq-get-stanza))
-  (let ((from (cl-ngxmpp:from stanza))
-        (to   (cl-ngxmpp:to   stanza))
-        (id   (cl-ngxmpp:id   stanza))
-        (iq-type (cl-ngxmpp:iq-type stanza)))
+  (let ((from (xmpp%:from stanza))
+        (to   (xmpp%:to   stanza))
+        (id   (xmpp%:id   stanza))
+        (iq-type (xmpp%:iq-type stanza)))
     (write-line (format nil "IQ ~A (~A) ~A -> ~A" id iq-type from to))))
 
 (define-stanza-handler ((stanza iq-result-stanza))
-  (let ((id (cl-ngxmpp:id stanza))
-        (iq-type (cl-ngxmpp:iq-type stanza))
-        (to (cl-ngxmpp:to stanza))
-        (from (cl-ngxmpp:from stanza)))
+  (let ((id (xmpp%:id stanza))
+        (iq-type (xmpp%:iq-type stanza))
+        (to (xmpp%:to stanza))
+        (from (xmpp%:from stanza)))
     (write-line (format nil "IQ ~A (~A) ~A -> ~A" id iq-type from to))))
 
 ;;
 ;; XEP (Multi User Chat) related handlers.
 ;;
 (define-stanza-handler ((stanza message-groupchat-stanza) :xep multi-user-chat)
-  (let ((body (cl-ngxmpp:body stanza))
-        (from (cl-ngxmpp:from stanza))
-        (to   (cl-ngxmpp:to   stanza)))
+  (let ((body (xmpp%:body stanza))
+        (from (xmpp%:from stanza))
+        (to   (xmpp%:to   stanza)))
     (write-line (format nil "MUC message: ~A -> ~A: ~A" from to body))))
 
 (define-stanza-handler ((stanza message-groupchat-stanza) :xep delayed-delivery)
   (write-line (format nil "MUC delayed message: ~A: ~A"
-                      (cl-ngxmpp:stamp stanza) (cl-ngxmpp:delay-from stanza))))
+                      (xmpp%:stamp stanza) (xmpp%:delay-from stanza))))
 
 (define-stanza-handler ((stanza presence-user-stanza) :xep multi-user-chat)
-  (let ((affiliation (cl-ngxmpp:affiliation stanza))
-        (role        (cl-ngxmpp:role stanza))
-        (from        (cl-ngxmpp:from stanza))
-        (to          (cl-ngxmpp:to   stanza)))
+  (let ((affiliation (xmpp%:affiliation stanza))
+        (role        (xmpp%:role stanza))
+        (from        (xmpp%:from stanza))
+        (to          (xmpp%:to   stanza)))
     (write-line (format nil "MUC User presence: ~A -> ~A, affil: ~A, role: ~A"
                         from to affiliation role))))
 
 (define-stanza-handler ((stanza presence-user-self-stanza) :xep multi-user-chat)
-  (write-line (format nil "MUC user self presence, roster ends: ~A" (cl-ngxmpp:statuses stanza))))
+  (write-line (format nil "MUC user self presence, roster ends: ~A" (xmpp%:statuses stanza))))
      
 (defun connect (&key server-hostname username password)
   (unless (null *client*)
-    (cl-ngxmpp-client:disconnect *client*))
-  (setf *client* (make-instance 'cl-ngxmpp-client:client :server-hostname server-hostname))
-  (cl-ngxmpp-client:connect *client*)
-  (cl-ngxmpp-client:authorize *client* :username username :password password))
+    (xmpp:disconnect *client*))
+  (setf *client* (make-instance 'xmpp:client :server-hostname server-hostname))
+  (xmpp:connect *client*)
+  (xmpp:authorize *client* :username username :password password))
   
 
 (defun join-room (&key conference nickname)
-  (cl-ngxmpp-client:call-methods-with-xep (multi-user-chat)
+  (xmpp:call-methods-with-xep (multi-user-chat)
     ((send-presence-join *client*
                          :conference conference
                          :nickname nickname)))
-  (cl-ngxmpp-client:proceed-stanza-loop *client*))
+  (xmpp:proceed-stanza-loop *client*))
 
 (defun exit-room (&key conference nickname)
-  (cl-ngxmpp-client:call-methods-with-xep (multi-user-chat)
+  (xmpp:call-methods-with-xep (multi-user-chat)
     ((send-presence-exit *client*
                          :conference conference
                          :nickname nickname)))
-  (cl-ngxmpp-client:proceed-stanza-loop *client*))
+  (xmpp:proceed-stanza-loop *client*))

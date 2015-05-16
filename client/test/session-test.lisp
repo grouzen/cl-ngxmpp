@@ -15,7 +15,7 @@
    (username        "clngxmpp")
    (password        "clngxmpp")
    (mechanism       nil))
-  (:setup (setf session (cl-ngxmpp-client::create-session
+  (:setup (setf session (xmpp::create-session
                            :server-hostname server-hostname
                            :server-port     server-port
                            :username        username
@@ -27,26 +27,26 @@
 
 (deftestsuite session-open-test (session-test)
   ()
-  (:teardown (cl-ngxmpp-client:close-session session)))
+  (:teardown (xmpp:close-session session)))
 
 (addtest (session-open-test)
   correct-open
   (progn
-    (cl-ngxmpp-client:open-session session)
-    (ensure (cl-ngxmpp:openedp
-             (cl-ngxmpp-client::xml-stream session)))))
+    (xmpp:open-session session)
+    (ensure (xmpp%:openedp
+             (xmpp::xml-stream session)))))
 
 (addtest (session-open-test)
   incorrect-server-hostname-open
   (progn
-    (setf (cl-ngxmpp-client::server-hostname session) "incorrect.hostname")
-    (ensure-condition cl-ngxmpp:connection-error
-      (cl-ngxmpp-client:open-session session))))
+    (setf (xmpp::server-hostname session) "incorrect.hostname")
+    (ensure-condition xmpp%:connection-error
+      (xmpp:open-session session))))
 
 (addtest (session-open-test)
   incorrect-username-open
   (progn
-    (setf (cl-ngxmpp-client::username session) "incorrect-username-unknown")
-    (ensure-condition cl-ngxmpp:negotiate-sasl-error
-      (cl-ngxmpp-client:open-session session))))
+    (setf (xmpp::username session) "incorrect-username-unknown")
+    (ensure-condition xmpp%:negotiate-sasl-error
+      (xmpp:open-session session))))
       

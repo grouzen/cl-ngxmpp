@@ -38,7 +38,7 @@ If authorize step is failed for any reason, an error of type
 CL-NGXMPP:NEGOTIATE-SASL-ERROR is signaled."
   (with-slots (username password mechanism xml-stream) session
     (connect session)
-    (when (cl-ngxmpp:openedp xml-stream)
+    (when (xmpp%:openedp xml-stream)
       (authorize session
                  :username username
                  :password password

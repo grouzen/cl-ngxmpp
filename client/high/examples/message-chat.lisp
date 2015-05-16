@@ -4,12 +4,12 @@
 (in-package #:cl-ngxmpp-client.high.examples)
 
 
-(defparameter *session* (cl-ngxmpp-client:create-session
+(defparameter *session* (xmpp:create-session
                          :server-hostname "ch3kr.net"
                          :username        "clngxmpp"
                          :password        "clngxmpp"))
 
-(cl-ngxmpp-client:open-session *session*)
+(xmpp:open-session *session*)
 
 
                   
