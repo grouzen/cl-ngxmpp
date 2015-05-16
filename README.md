@@ -18,7 +18,10 @@ TODO:
 - [X] Migrate from cl-async to blackbird library
 - [X] Fix Travis-CI build
 - [ ] Develop a high-level interface
+- [ ] Asynchronous high-level interface
 - [X] Code DSL to have more concise way to define stanzas
+- [X] Re-use the brand new `define-stanza` in a definition of `define-xep` method
+- [ ] Move `handle-stanza` generic method from `xmpp%` package into `xmpp` (since, it's not a part of stanza's protocol anymore)
 - [ ] Debug levels, and generic `print-debug` function
 - [ ] Use short package nicknames instead of long names
 - [ ] Write more descriptive README

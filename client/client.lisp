@@ -64,38 +64,39 @@
 is established. In case of error signals negotiate-sasl-condition which should be
 handled by the caller."
   (let ((xml-stream (xml-stream client)))
-    (setf (username client) username
-          (password client) password)
-    ;; This hell is needed for suppression of errors.
-    ;; Default cl-ngxmpp:handle-stanza signals a handle-stanza-error,
-    ;; thus if client didn't define handle-stanza method for appropriate
-    ;; type of stanza, authorization will fail.
-    ;; There is another case about sasl negotiation, when authorization failed
-    ;; and server sends <failure/> stanza, but client didn't manage to define
-    ;; handle-stanza for failure stanza.
-    (handler-bind
-        ((cl-ngxmpp:handle-stanza-error
-          #'(lambda (c)
-              (declare (ignore c))
-              (invoke-restart 'skip-handle-stanza))))
-      (macrolet ((with-restarts ((&rest restarts) &body steps)
-                   (let ((steps-restarts
-                          (mapcar
-                           #'(lambda (step)
-                               `(restart-case ,step ,@restarts))
-                           steps)))
-                     `(progn ,@steps-restarts))))
-        (with-restarts ((skip-handle-stanza () nil))
-          (cl-ngxmpp:negotiate-sasl xml-stream
-                                    :username username
-                                    :password password
-                                    :mechanism mechanism)
-          (%bind% client)
-          (%session% client)
-          ;; TODO:
-          ;; move this into session.lisp
-          (send-presence-show client :show "online")
-          (proceed-stanza client))))))
+    (when (xmpp%:tls-negotiatedp xml-stream)
+      (setf (username client) username
+            (password client) password)
+      ;; This hell is needed for suppression of errors.
+      ;; Default cl-ngxmpp:handle-stanza signals a handle-stanza-error,
+      ;; thus if client didn't define handle-stanza method for appropriate
+      ;; type of stanza, authorization will fail.
+      ;; There is another case about sasl negotiation, when authorization failed
+      ;; and server sends <failure/> stanza, but client didn't manage to define
+      ;; handle-stanza for failure stanza.
+      (handler-bind
+          ((cl-ngxmpp:handle-stanza-error
+            #'(lambda (c)
+                (declare (ignore c))
+                (invoke-restart 'skip-handle-stanza))))
+        (macrolet ((with-restarts ((&rest restarts) &body steps)
+                     (let ((steps-restarts
+                            (mapcar
+                             #'(lambda (step)
+                                 `(restart-case ,step ,@restarts))
+                             steps)))
+                       `(progn ,@steps-restarts))))
+          (with-restarts ((skip-handle-stanza () nil))
+            (cl-ngxmpp:negotiate-sasl xml-stream
+                                      :username username
+                                      :password password
+                                      :mechanism mechanism)
+            (%bind% client)
+            (%session% client)
+            ;; TODO:
+            ;; move this into session.lisp
+            (send-presence-show client :show "online")
+            (proceed-stanza client)))))))
 
 
 ;; TODO:
@@ -135,14 +136,12 @@ handled by the caller."
       (cl-ngxmpp:handle-stanza-error (c) (format nil "~S" c)))))
 
 (defmethod proceed-stanza ((client client))
-  (let ((xml-stream (xml-stream client)))
-    (cl-ngxmpp:with-stanza-input (xml-stream stanza)
-      (cl-ngxmpp:handle-stanza stanza))))
+  (cl-ngxmpp:handle-stanza (read-stanza client)))
 
 ;;
-;; Method just receives an any stanza from network
+;; Method just receives any stanza from the network
 ;; and returns it. User can do anything with result
-;; of these method (i.e call handle-stanza).
+;; of this method (i.e call handle-stanza).
 ;; It's usefull for event-loop.
 ;;
 (defmethod read-stanza ((client client))

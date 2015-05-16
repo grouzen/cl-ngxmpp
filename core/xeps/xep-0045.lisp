@@ -15,13 +15,13 @@
      ()
 
      (:methods
-      ((xml-to-stanza (stanza)
+      ((xml-to-stanza ((stanza))
          (let ((disp (dispatch-stanza stanza 'multi-user-chat-message-groupchat-stanza)))
            (if (typep disp 'unknown-stanza)
                stanza
                disp)))
 
-       (stanza-to-xml (stanza)
+       (stanza-to-xml ((stanza))
          (with-message-stanza (stanza))))
 
       :dispatcher ((stanza)
@@ -31,10 +31,10 @@
                
 
    (presence-join-stanza (presence-stanza)
-     ((x-xmlns :accessor x-xmlns :initarg :x-xmlns :initform "http://jabber.org/protocol/muc"))
+     ((x-xmlns "http://jabber.org/protocol/muc"))
      
      (:methods
-      ((stanza-to-xml (stanza)
+      ((stanza-to-xml ((stanza))
          (with-presence-stanza (stanza)
            (cxml:with-element "x"
              (cxml:attribute "xmlns" (x-xmlns stanza))))))))
@@ -44,17 +44,17 @@
      ()
      
      (:methods
-      ((stanza-to-xml (stanza)
+      ((stanza-to-xml ((stanza))
          (call-next-method stanza)))))
 
    (presence-user-stanza (presence-stanza)
-     ((x-xmlns     :accessor x-xmlns     :initarg :x-xmlns     :initform "http://jabber.org/protocol/muc#user")
-      (affiliation :accessor affiliation :initarg :affiliation :initform "member")
-      (role        :accessor role        :initarg :role        :initform "participant")
-      (jid         :accessor jid         :initarg :jid         :initform nil))
+     ((x-xmlns     "http://jabber.org/protocol/muc#user")
+      (affiliation "member")
+      (role        "participant")
+      jid)
      
      (:methods
-      ((xml-to-stanza (stanza)
+      ((xml-to-stanza ((stanza))
          (let* ((x-node      (get-x-node stanza))
                 (item-node   (get-element-by-name x-node "item"))
                 (affiliation (dom:get-attribute item-node "affiliation"))
@@ -67,7 +67,7 @@
                  stanza)
                disp)))
 
-       (make-stanza (stanza class-name)
+       (make-stanza ((stanza) class-name)
          (let* ((item-node   (get-element-by-name (get-x-node stanza) "item"))
                 (affiliation (dom:get-attribute item-node "affiliation"))
                 (role        (dom:get-attribute item-node "role")))
@@ -80,7 +80,7 @@
                                          :role        role))))
 
        ;; Helper for searhing "x" element with particular xmlns attr.
-       (get-x-node (stanza)
+       (get-x-node ((stanza))
          (let ((xs (remove-if #'(lambda (x-node)
                                   (not (equalp (dom:get-attribute x-node "xmlns")
                                                "http://jabber.org/protocol/muc#user")))
@@ -93,10 +93,10 @@
                                    :xml-node (xml-node stanza))))))
    
    (presence-user-self-stanza (multi-user-chat-presence-user-stanza)
-     ((statuses :accessor statuses :initarg :statuses :initform nil))
+     (statuses)
 
      (:methods
-      ((xml-to-stanza (stanza)
+      ((xml-to-stanza ((stanza))
          (let* ((x-node       (get-element-by-name (dom:first-child (xml-node stanza)) "x"))
                 (status-nodes (get-elements-by-name x-node "status")))
            (loop :for status-node :in status-nodes

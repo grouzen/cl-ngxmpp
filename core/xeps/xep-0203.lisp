@@ -16,13 +16,13 @@
                               :depends-on (multi-user-chat))
 
   ((root-stanza ()
-     ((description :accessor description :initarg :description :initform nil)           
-      (delay-from  :accessor delay-from  :initarg :delay-from  :initform "")
-      (stamp       :accessor stamp       :initarg :stamp       :initform "")
-      (delay-xmlns :accessor delay-xmlns :initarg :delay-xmlns :initform "urn:xmpp:delay"))
+     (description           
+      (delay-from  "")
+      (stamp       "")
+      (delay-xmlns "urn:xmpp:delay"))
 
      (:methods
-      ((xml-to-stanza (stanza)
+      ((xml-to-stanza ((stanza))
          (let* ((delay-node  (get-element-by-name (dom:first-child (xml-node stanza)) "delay"))
                 (from        (dom:get-attribute delay-node "from"))
                 (stamp       (dom:get-attribute delay-node "stamp"))
@@ -37,7 +37,7 @@
      ()
 
      (:methods
-      ((xml-to-stanza (stanza)
+      ((xml-to-stanza ((stanza))
          (call-next-method stanza)))
 
       :dispatcher ((stanza)
@@ -49,7 +49,7 @@
      ()
 
      (:methods
-      ((xml-to-stanza (stanza)
+      ((xml-to-stanza ((stanza))
          (call-next-method stanza)))
 
       :dispatcher ((stanza)

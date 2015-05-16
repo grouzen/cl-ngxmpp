@@ -110,6 +110,10 @@ needs to be implemented only for parental classes"))
 ;;     ...))
 ;;
 
+;;
+;; Compile-time errors
+;;
+
 (define-condition defstanza-method%-error (simple-condition)
   ((arg :reader arg :initarg :arg))
   (:report (lambda (condition stream)
@@ -146,14 +150,14 @@ needs to be implemented only for parental classes"))
     `(defclass ,stanza-name (,@superclasses) (,@slotz))))
 
 (defmacro defstanza-methods% (stanza-name methods)
-  `(list ,@(mapcar #'(lambda (method)
-                       (if (eq (first method) :macro)
-                           `(defmacro ,@(cdr `,method))
-                           (let ((name (first method))
-                                 (args (second method))
-                                 (body (cdr (cdr method))))
-                             `(defstanza-method% ,stanza-name ,name ,args ,@body))))
-                       methods)))
+  `(progn ,@(mapcar #'(lambda (method)
+              (if (eq (first method) :macro)
+                  `(defmacro ,@(cdr `,method))
+                  (let ((name (first method))
+                        (args (second method))
+                        (body (cdr (cdr method))))
+                    `(defstanza-method% ,stanza-name ,name ,args ,@body))))
+          methods)))
 
 (defmacro defstanza-method% (stanza-name method-name method-args &body method-body)
   (let ((obj-args (mapcar #'(lambda (arg)
@@ -316,9 +320,21 @@ needs to be implemented only for parental classes"))
       (print-unreadable-object (obj stream :type t :identity t)
         (format stream "from: ~A, to: ~A, body: ~A"
                 from to body))))
-
+  
+  (:macro with-message-stanza (message-stanza &body body)
+    `(cxml:with-element "message"
+       (unless (null (from ,message-stanza))
+         (cxml:attribute "from" (from ,message-stanza)))
+       (unless (null (to ,message-stanza))
+         (cxml:attribute "to" (to ,message-stanza)))
+       (unless (null (message-type ,message-stanza))
+         (cxml:attribute "type" (message-type ,message-stanza)))
+       (cxml:with-element "body"
+         (cxml:text (body ,message-stanza)))
+       ,@body))
+  
   (stanza-to-xml ((stanza))
-    (with-message-stanza (stanza)))
+    (with-message-stanza stanza))
 
   (make-stanza ((stanza) class-name)
     (let* ((message-node (dom:first-child (xml-node stanza)))
@@ -346,19 +362,7 @@ needs to be implemented only for parental classes"))
                   (from stanza) from
                   (body stanza) body)
             stanza)
-          disp)))
-  
-  (:macro with-message-stanza ((message-stanza) &body body)
-    `(cxml:with-element "message"
-       (unless (null (from ,message-stanza))
-         (cxml:attribute "from" (from ,message-stanza)))
-       (unless (null (to ,message-stanza))
-         (cxml:attribute "to" (to ,message-stanza)))
-       (unless (null (message-type ,message-stanza))
-         (cxml:attribute "type" (message-type ,message-stanza)))
-       (cxml:with-element "body"
-         (cxml:text (body ,message-stanza)))
-       ,@body)))
+          disp))))
         
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -373,7 +377,7 @@ needs to be implemented only for parental classes"))
 (defstanza presence-stanza (stanza)
     (presence-type (id "") to from show status priority)
 
-  (:macro with-presence-stanza ((presence-stanza) &body body)
+  (:macro with-presence-stanza (presence-stanza &body body)
     `(cxml:with-element "presence"
        (unless (null (to ,presence-stanza))
          (cxml:attribute "to"   (to ,presence-stanza)))
@@ -384,7 +388,7 @@ needs to be implemented only for parental classes"))
        ,@body))
 
   (stanza-to-xml ((stanza))
-    (with-presence-stanza (stanza)))
+    (with-presence-stanza stanza))
 
   (make-stanza ((stanza) class-name)
     (let* ((xml-node      (xml-node stanza))
@@ -422,7 +426,7 @@ needs to be implemented only for parental classes"))
       stanza))
 
   (stanza-to-xml ((stanza))
-    (with-presence-stanza (stanza)
+    (with-presence-stanza stanza
       (cxml:with-element "show"
         (cxml:text (show stanza))))))
 
@@ -439,7 +443,7 @@ needs to be implemented only for parental classes"))
       stanza))
 
   (stanza-to-xml ((stanza))
-    (with-presence-stanza (stanza)
+    (with-presence-stanza stanza
       (cxml:with-element "status"
         (cxml:text (status stanza))))))
   
@@ -459,7 +463,7 @@ needs to be implemented only for parental classes"))
 (defstanza iq-stanza (stanza)
     (id (iq-type "get") to from)
 
-  (:macro with-iq-stanza ((iq-stanza) &body body)
+  (:macro with-iq-stanza (iq-stanza &body body)
     `(cxml:with-element "iq"
        (cxml:attribute "id" (id ,iq-stanza))
        (unless (null (to ,iq-stanza))
@@ -500,8 +504,8 @@ needs to be implemented only for parental classes"))
 (defstanza iq-set-stanza (iq-stanza)
     ()
 
-  (:macro with-iq-set-stanza ((iq-set-stanza) &body body)
-    `(with-iq-stanza (,iq-set-stanza)
+  (:macro with-iq-set-stanza (iq-set-stanza &body body)
+    `(with-iq-stanza ,iq-set-stanza
        (cxml:attribute "type" "set")
        ,@body)))
 
@@ -511,7 +515,7 @@ needs to be implemented only for parental classes"))
     (resource (xmlns "urn:ietf:params:xml:ns:xmpp-bind"))
 
   (stanza-to-xml ((stanza))
-    (with-iq-set-stanza (stanza)
+    (with-iq-set-stanza stanza
       (cxml:with-element "bind"
         (cxml:attribute "xmlns" (xmlns stanza))
         (unless (null (resource stanza))
@@ -524,7 +528,7 @@ needs to be implemented only for parental classes"))
     ((xmlns "urn:ietf:params:xml:ns:xmpp-session"))
 
   (stanza-to-xml ((stanza))
-    (with-iq-set-stanza (stanza)
+    (with-iq-set-stanza stanza
       (cxml:with-element "session"
         (cxml:attribute "xmlns" (xmlns stanza))))))
   

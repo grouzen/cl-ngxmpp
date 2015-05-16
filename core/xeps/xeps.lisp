@@ -158,43 +158,25 @@
                                          :depends-on  ',depends-on)))
        (setf (getf *xeps-list* (string-to-keyword xep-name-string)) xep-obj)
        ,@(mapcar #'(lambda (stanza-definition)
-                     `(define-xep-stanza (,xep-name)
+                     `(define-xep-stanza% (,xep-name)
                         ,stanza-definition))
                  (car body))))
 
-(defmacro define-xep-stanza ((xep-name) &body body)
+(defmacro define-xep-stanza% ((xep-name) &body body)
   (let* ((stanza-repr   (first body))
          (stanza-name   (alexandria:symbolicate `,xep-name '- (car stanza-repr)))
          (super-classes (second stanza-repr))
          (slots         (third  stanza-repr))
          (helpers       (cadddr stanza-repr))
          (methods       (getf helpers :methods))
-         (wrapper       (getf helpers :wrapper))
+         ;;(wrapper       (getf helpers :wrapper))
          (dispatcher    (getf helpers :dispatcher))
          (definitions   nil))
-    ;; Stanza class definition
-    (push `(defclass ,stanza-name (,@super-classes) ,slots) definitions)
-    ;; Methods for stanza: stanza-to-xml, xml-to-stanza, make-stanza
-    (when methods
-      (mapcar #'(lambda (method)
-                  (let* ((method-name     (car method))
-                         (method-args     (second method))
-                         (method-obj-arg  (list (first method-args) stanza-name))
-                         (method-rest-arg (cdr method-args))
-                         (method-body     (third method)))
-                    (push `(defmethod ,method-name ((,@method-obj-arg) ,@method-rest-arg) ,method-body) definitions)))
-              methods))
-    ;; Optional one macro for stanza: with-<stanza>
-    (when wrapper
-      (let* ((macro-name     (alexandria:symbolicate 'with '- `,stanza-name))
-             (macro-args     (car wrapper))
-             (macro-obj-arg  (car macro-args))
-             (macro-body-arg (cdr macro-args))
-             (macro-body     (cdr wrapper)))
-        (push 
-         `(defmacro ,macro-name ((,@macro-obj-arg) ,@macro-body-arg) ,@macro-body)
-          definitions)))
-    ;;
+    
+    (push
+     `(defstanza ,stanza-name (,@super-classes) ,slots ,@methods)
+     definitions)
+    
     ;; Dispatcher
     ;;
     ;; Here we're pushing dispatcher into a structure like:
@@ -207,7 +189,9 @@
          `(with-xep (,xep-name)
             (loop :for super-class :in '(,@super-classes)
                :do (push (list ',stanza-name #'(lambda (,@dispatcher-arg) ,@dispatcher-body))
-                         (getf (dispatchers ,xep-name) (string-to-keyword (symbol-name super-class))))))
+                         (getf (dispatchers ,xep-name)
+                               (string-to-keyword (symbol-name super-class))))))
          definitions)))
-    (setf definitions (reverse definitions))
+    (setf definitions (reverse definitions))       
     `(progn ,@definitions)))
+

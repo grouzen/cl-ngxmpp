@@ -50,7 +50,7 @@
     (write-line (format nil "~A -> ~A: ~A" from to body))
     (if (string= body "stop talking")
         (progn 
-          (cl-ngxmpp-client:send-message *client* :to from :body "Thanks for talking to me ;-)")
+          (cl-ngxmpp-client:send-message *client* :to from :body "Thanks for talking with me ;-)")
           (cl-ngxmpp-client:disconnect *client*))
         (cl-ngxmpp-client:send-message *client*
                                        :to from
