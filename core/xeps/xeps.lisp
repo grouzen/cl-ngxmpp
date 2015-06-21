@@ -7,11 +7,15 @@
 
 (in-package #:cl-ngxmpp)
 
-;; This is plist with format:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; '(:xep-name xep-class
-;;    ...)
+;; The registry of registered (available) XEPs
 ;;
+;; This is plist in format:
+;;
+;; '(:xep-name xep-class :...)
+;;
+
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *xeps-list* nil))
 
@@ -33,14 +37,13 @@
                        names)))
     (setf *stanzas-dispatchers* (build-stanzas-dispatchers% xeps-list nil))))
 
-#+nil
-(defun stop-use-xeps (names)
-  (setf *stanzas-dispatchers*
-        (remove-if #'(lambda (disp-name)
-                       (member (string-downcase (symbol-name disp-name))
-                               names
-                               :test #'string=))
-                   *stanzas-dispatchers*)))
+;; (defun stop-using-xeps (names)
+;;   (setf *stanzas-dispatchers*
+;;         (remove-if #'(lambda (disp-name)
+;;                        (member (string-downcase (symbol-name disp-name))
+;;                                names
+;;                                :test #'string=))
+;;                    *stanzas-dispatchers*)))
   
 (defun build-stanzas-dispatchers% (xeps-list dispatchers)
   (labels ((find-first-dep (deps-list xeps-list)
@@ -59,7 +62,7 @@
                (xep-obj             (get-xep xep))
                (xep-deps            (mapcar #'(lambda (d) (string-downcase (symbol-name d))) (depends-on xep-obj)))
                (xep-dispatchers     (dispatchers xep-obj))
-               ;; TODO: find out more simple way
+               ;; TODO: find out a simpler way
                (ret-dispatchers     (let* ((new-disps (reduce #'append
                                                               (mapcddr #'(lambda (k v)
                                                                            (list k (append (getf dispatchers k) v)))
@@ -77,6 +80,7 @@
               (build-stanzas-dispatchers% (cdr xeps-list) ret-dispatchers)
               (build-stanzas-dispatchers% reordered-xeps-list dispatchers))))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defclass xep ()
   ((name        :accessor name        :initarg :name        :initform nil)
@@ -118,36 +122,15 @@
     `(,wrapper-name (,stanza)
        ,@body)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; XEP's declaration example:
-;; 
-;; (define-xep (muc :order "0045"
-;;                  :author "John McCarty"
-;;                  :description "Multi User Chat"
-;;                  :depends-on (delayed-delivery))
+;; Please, define XEPs using this DSL
 ;;
-;;    ((message-stanza (message-stanza)
-;;       ((to :initarg :to ...)
-;;                 ...))
-;;       (:methods ((stanza-to-xml (stanza)
-;;                    (cxml:with-element "message"
-;;                      (cxml:attribute "to" (to stanza))))
-;;                   ...)
-;;                  (xml-to-stanza (stanza)
-;;                    ...)
-;;                  (make-stanza (stanza class-name)
-;;                    ...))
-;;        :wrapper (((message-stanza) &body body)
-;;          `(cxml:with-element "message"
-;;              ...)))
-;;        :dispathcher ((stanza)
-;;         (unless (find-element a)
-;;            nil)))
-;;        
-;;     (iq-set-message-stanza (iq-set-stanza) ())))
-;;     ...
+;; You can find an example how to use `define-xep`, look inside any xep-[0-9]{4}.lisp file ;)  
 ;;
 ;; TODO: verification and usefull errors messages.
+;;
+
 (defmacro define-xep ((xep-name &key order author description depends-on) &body body)
     `(let* ((xep-name-string (string-downcase (symbol-name ',xep-name)))
             (xep-obj         (make-instance 'xep

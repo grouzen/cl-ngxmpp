@@ -17,13 +17,15 @@ TODO:
 
 - [X] Migrate from cl-async to blackbird library
 - [X] Fix Travis-CI build
-- [ ] Develop a high-level interface
-- [ ] Asynchronous high-level interface
 - [X] Code DSL to have more concise way to define stanzas
 - [X] Re-use the brand new `define-stanza` in a definition of `define-xep` method
-- [ ] Move `handle-stanza` generic method from `xmpp%` package into `xmpp` (since, it's not a part of stanza's protocol anymore)
-- [ ] Debug levels, and generic `print-debug` function
 - [X] Use short package nicknames instead of long names
+- [ ] Try to split out xeps/async/etc functionality into different packages
+- [ ] Be able to represent stanza in XML
+- [ ] Move `handle-stanza` generic method from `xmpp%` package into `xmpp` (since, it's not a part of stanza's protocol anymore)
+- [ ] Develop a high-level interface
+- [ ] Asynchronous high-level interface
+- [ ] Debug levels, and generic `print-debug` function
 - [ ] Write more descriptive README
 - [ ] Re-think and (it would be better) rewrite the code in `client/xeps/xeps.lisp`
 - [ ] Develop a simple bot for conferences based on 'Markov chains' as another example

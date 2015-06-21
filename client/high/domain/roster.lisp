@@ -8,8 +8,8 @@
 (in-package #:cl-ngxmpp-client)
 
 (define-domain :singleton roster ()
-  ;; Each route will be added into global routing table.
-  ;; Table can looks like:
+  ;; Each route will be added into a global routing table.
+  ;; The table looks like:
   ;; (:presence-stanza
   ;;   (roster add-entry
   ;;          ;; implicit function for destructuring incoming stanza.

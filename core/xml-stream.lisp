@@ -7,7 +7,6 @@
 
 (in-package #:cl-ngxmpp)
 
-
 (defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
   `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
      ,@body))
