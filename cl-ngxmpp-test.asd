@@ -13,9 +13,8 @@
   :depends-on (:lift :cl-ngxmpp)
   :license "Lisp-LGPL"
   :serial t
-  :components ((:module "test"
+  :components ((:module "tests/core"
                         :serial t
-                        :pathname "core/test"  
                         :components ((:file "package")
                                      (:file "suite")
                                      (:file "stanzas-test")

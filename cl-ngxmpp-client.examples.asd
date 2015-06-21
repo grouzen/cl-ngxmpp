@@ -12,7 +12,6 @@
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
   :license "Lisp-LGPL"
   :depends-on (:cl-ngxmpp-client)
-  :components ((:module "examples"
-                        :pathname "client/examples/"
-                        :components ((:file "echo-bot"))
-                        :pathname "client/examples")))
+  :components ((:module "src/client/examples"
+                        :components ((:file "echo-bot")))))
+

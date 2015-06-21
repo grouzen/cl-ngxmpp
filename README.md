@@ -20,6 +20,7 @@ TODO:
 - [X] Code DSL to have more concise way to define stanzas
 - [X] Re-use the brand new `define-stanza` in a definition of `define-xep` method
 - [X] Use short package nicknames instead of long names
+- [ ] Reorganize the structure of files and directories
 - [ ] Try to split out xeps/async/etc functionality into different packages
 - [ ] Be able to represent stanza in XML
 - [ ] Move `handle-stanza` generic method from `xmpp%` package into `xmpp` (since, it's not a part of stanza's protocol anymore)

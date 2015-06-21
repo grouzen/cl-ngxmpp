@@ -13,9 +13,8 @@
   :depends-on (:lift :cl-ngxmpp-client)
   :license "Lisp-LGPL"
   :serial t
-  :components ((:module "test"
+  :components ((:module "tests/client"
                         :serial t
-                        :pathname "client/test"  
                         :components ((:file "package")
                                      (:file "suite")
                                      (:file "client-test")

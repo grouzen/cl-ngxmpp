@@ -13,7 +13,7 @@
   :license "Lisp-LGPL"
   :depends-on (:blackbird :alexandria :usocket :cxml :babel :cl+ssl :cl-base64 :cl-sasl)
   :serial t
-  :components ((:module "core"
+  :components ((:module "src/core"
                         :serial t
                         :components ((:file "package")
                                      (:file "utils")

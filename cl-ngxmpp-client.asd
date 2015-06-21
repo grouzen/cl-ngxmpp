@@ -13,7 +13,7 @@
   :license "Lisp-LGPL"
   :depends-on (:cl-ngxmpp)
   :serial t
-  :components ((:module "client"
+  :components ((:module "src/client"
                         :serial t
                         :components ((:file "package")
                                      (:file "client")
