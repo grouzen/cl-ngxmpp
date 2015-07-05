@@ -45,6 +45,12 @@
         ""
         (dom:data child))))
 
+;; TODO: come up with a better name for this
+(defun get-stanza-xml-string (stanza)
+  (babel:octets-to-string
+   (cxml:with-xml-output (cxml:make-octet-vector-sink :canonical 1)
+     (stanza-to-xml stanza))))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
 ;;
 ;; The 'protocol' for defining stanzas
@@ -180,7 +186,7 @@ needs to be implemented only for parental classes"))
 
 (defstanza stanza ()
     (xml-node)
-  
+
   (handle-stanza ((stanza))
     (error 'handle-stanza-error
            :format-control "Default stanza handler was called. Please define handler for this type of stanza"))

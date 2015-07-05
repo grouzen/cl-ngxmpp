@@ -20,9 +20,10 @@ TODO:
 - [X] Code DSL to have more concise way to define stanzas
 - [X] Re-use the brand new `define-stanza` in a definition of `define-xep` method
 - [X] Use short package nicknames instead of long names
-- [ ] Reorganize the structure of files and directories
+- [X] Reorganize the structure of files and directories
+- [ ] Rewrite tests using mocks
 - [ ] Try to split out xeps/async/etc functionality into different packages
-- [ ] Be able to represent stanza in XML
+- [X] Be able to represent stanzas as a XML-encoded strings
 - [ ] Move `handle-stanza` generic method from `xmpp%` package into `xmpp` (since, it's not a part of stanza's protocol anymore)
 - [ ] Develop a high-level interface
 - [ ] Asynchronous high-level interface
@@ -30,7 +31,6 @@ TODO:
 - [ ] Write more descriptive README
 - [ ] Re-think and (it would be better) rewrite the code in `client/xeps/xeps.lisp`
 - [ ] Develop a simple bot for conferences based on 'Markov chains' as another example
-- [ ] Rewrite tests for client part in such way so that there are no dependencies from external services
 
 Examples:
 ================================================================================

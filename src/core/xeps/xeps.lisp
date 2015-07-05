@@ -37,6 +37,7 @@
                        names)))
     (setf *stanzas-dispatchers* (build-stanzas-dispatchers% xeps-list nil))))
 
+;; WTF???
 ;; (defun stop-using-xeps (names)
 ;;   (setf *stanzas-dispatchers*
 ;;         (remove-if #'(lambda (disp-name)

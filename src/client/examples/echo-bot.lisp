@@ -48,13 +48,14 @@
         (to   (xmpp%::to   stanza))
         (body (xmpp%::body stanza)))
     (write-line (format nil "~A -> ~A: ~A" from to body))
+    (write-line (format nil "XML: ~A" (xmpp%:get-stanza-xml-string stanza)))
     (if (string= body "stop talking")
         (progn 
           (xmpp:send-message *client* :to from :body "Thanks for talking with me ;-)")
           (xmpp:disconnect *client*))
         (xmpp:send-message *client*
-                                       :to from
-                                       :body (format nil ">> ~A" body)))))
+                           :to from
+                           :body (format nil ">> ~A" body)))))
 
 (defun run (&key server-hostname username password mechanism to body)
   (unless (null *client*)
