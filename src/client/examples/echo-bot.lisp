@@ -61,7 +61,8 @@
   (unless (null *client*)
     (xmpp:disconnect *client*))
   (setf *client* (make-instance 'xmpp:client
-                                :server-hostname server-hostname))
+                                :server-hostname server-hostname
+                                :debuggable t))
   (xmpp:connect *client*)
   (xmpp:authorize *client* :username username :password password :mechanism mechanism)
   (xmpp:send-message *client* :to to :body body)

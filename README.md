@@ -16,6 +16,7 @@ WARNING: This library is under heavy development.
 - [X] Use short package nicknames instead of long names
 - [X] Reorganize the structure of files and directories
 - [X] Be able to represent stanzas as XML-encoded strings
+- [X] Generic `print-debug` function
 - [ ] Get rid of `send-*` methods/functions, substitute them with macro `send-stanza`
 - [ ] Re-think and (it would be better) rewrite the code in `client/xeps/xeps.lisp`
 - [ ] Rewrite tests using mocks
@@ -30,7 +31,6 @@ WARNING: This library is under heavy development.
       (since, it's not a part of stanza's protocol anymore)
 - [ ] Develop a high-level interface
 - [ ] Asynchronous high-level interface
-- [ ] Debug levels, and generic `print-debug` function
 - [ ] Write more descriptive README
 - [ ] Develop a simple bot for conferences based on 'Markov chains' as another example
 

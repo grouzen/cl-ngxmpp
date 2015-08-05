@@ -34,8 +34,10 @@
            #:stop-use-xeps
            #:stanza-reader-read-stream
            #:resolve-async-value
+           #:print-debug
            #:get-stanza-xml-string
            ;; Classes
+           #:debuggable
            #:connection
            #:xml-stream
            #:stanza-reader

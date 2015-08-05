@@ -14,14 +14,13 @@
 ;; want to make multiple `client` instances for each xmpp account.
 ;;
 
-(defclass client ()
+(defclass client (xmpp%:debuggable)
   ((username        :accessor username        :initarg :username        :initform "")
    (password        :accessor password        :initarg :password        :initform "")
    (resource        :accessor resource        :initarg :resource        :initform "cl-ngxmpp")
    (server-hostname :accessor server-hostname :initarg :server-hostname :initform xmpp%:*default-hostname*)
    (server-port     :accessor server-port     :initarg :server-port     :initform xmpp%:*default-port*)
-   (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)
-   (debuggable      :accessor debuggable      :initarg :debuggable      :initform t)))
+   (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)))
 
 (defmethod print-object ((obj client) stream)
   (print-unreadable-object (obj stream :type t :identity t)
@@ -64,7 +63,7 @@
     (when (xmpp%:connectedp connection)
       (let ((xml-stream (make-instance 'xmpp%:xml-stream
                                        :connection connection
-                                       :debuggable (debuggable client))))
+                                       :debuggable (xmpp%:debuggable client))))
         (setf (xml-stream client) xml-stream)
         (xmpp%:open-stream xml-stream)
         (xmpp%:negotiate-tls xml-stream)))))

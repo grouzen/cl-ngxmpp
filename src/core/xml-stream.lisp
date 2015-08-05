@@ -7,6 +7,11 @@
 
 (in-package #:cl-ngxmpp)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Helpers for processing I/O over XML-stream
+;; 
+
 (defmacro with-stream-xml-input ((xml-stream xml-input) &body body)
   `(let ((,xml-input (cxml:parse (read-from-stream ,xml-stream) (cxml-dom:make-dom-builder))))
      ,@body))
@@ -20,34 +25,26 @@
             (,xml-string (babel:octets-to-string ,xml)))
        (write-to-stream ,xml-stream ,xml-string))))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; XML STREAM 
+;;
 
-(defclass xml-stream ()
+(defclass xml-stream (debuggable)
   ((connection :accessor connection :initarg :connection :initform nil)
    (id         :accessor id         :initarg :id         :initform nil)
    (features   :accessor features   :initarg :features   :initform nil)
-   (state      :accessor state      :initarg :state      :initform 'closed)
-   (debuggable :accessor debuggable :initarg :debuggable :initform nil)))
+   (state      :accessor state      :initarg :state      :initform 'closed)))
 
 (defmethod print-object ((obj xml-stream) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~A ~A ~A" (id obj) (symbol-name (state obj)) (debuggable obj))))
 
-(defmethod write-to-stream ((xml-stream xml-stream) string)
-  (resolve-async-value (adapter-write-to-stream (adapter (connection xml-stream)) string))
-  (when (debuggable xml-stream)
-    (write-line (format nil "Sent: ~A" string) *debug-io*)
-    (force-output *debug-io*)))
-
-(defmethod read-from-stream ((xml-stream xml-stream) &key (stanza-reader 'stanza-reader))
-  (let ((result (resolve-async-value (adapter-read-from-stream (adapter (connection xml-stream)) :stanza-reader stanza-reader))))
-    (when (debuggable xml-stream)
-      (write-line (format nil "Received: ~A" result) *debug-io*)
-      (force-output *debug-io*))
-    result))
-    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;  
-;; State-related predicates.
-;; 
+;; State-related predicates
+;;
+
 (defmethod openedp ((xml-stream xml-stream))
   (with-slots (state) xml-stream
     (or (eq state 'opened)
@@ -63,11 +60,24 @@
 (defmethod sasl-negotiatedp ((xml-stream xml-stream))
   (eq (state xml-stream) 'sasl-negotiated))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Basic operations over xml-stream: write, read, open, close, restart
+;;
+
+(defmethod write-to-stream ((xml-stream xml-stream) string)
+  (resolve-async-value (adapter-write-to-stream (adapter (connection xml-stream)) string))
+  (print-debug xml-stream "Sent: ~A" string))
+
+(defmethod read-from-stream ((xml-stream xml-stream) &key (stanza-reader 'stanza-reader))
+  (let ((result (resolve-async-value (adapter-read-from-stream (adapter (connection xml-stream)) :stanza-reader stanza-reader))))
+    (print-debug xml-stream "Received: ~A" result)
+    result))
+
 (defmethod close-stream ((xml-stream xml-stream))
   (setf (state xml-stream) 'closed)
   (with-stream-xml-output (xml-stream)
     (stanza-to-xml (make-instance 'stream-close-stanza))))
-
 
 (defmethod restart-stream ((xml-stream xml-stream))
   (setf (features xml-stream) nil)
@@ -88,19 +98,41 @@
          (features-stanza (xml-to-stanza (make-instance 'stanza :xml-node features-result-xml))))
     (setf (state xml-stream) 'opened)
     (setf (features xml-stream) features-stanza)
-    (when (debuggable xml-stream)
-      (write-line (format nil "Received stream: ~A" features-result) *debug-io*)
-      (print features-stanza *debug-io*)
-      (force-output *debug-io*))))
-             
+    (print-debug xml-stream "Received stream: ~A" features-result)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; The smallest piece of data in XMPP is so called 'stanza', in fact it is just a string.
+;; The reason why we need this code is that XMPP doesn't send any terminating symbols after
+;; stanzas, so we can't easily split a stream into separate XML pieces. So, to be able to do
+;; this we can use classical FSM approach.
 ;;
 ;; FSM for xml reading.
 ;;
 ;; Most of code taken and ported from:
 ;; https://github.com/dmatveev/shampoo-emacs/blob/8302cc4e14653980c2027c98d84f9aa3d1b59ebb/shampoo.el#L400
 ;;
+;; Thanks, yoghurt!
+;;
+
 (define-condition stanza-reader-error (proxy-error)
   ())
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; In some cases XMPP forces us to work with malformed XML, so there are 
+;; several stanza-reader implementations:
+;;
+;;   * standard `stanza-reader` reads a valid XML
+;;   * `stanza-reader-header` reads XML header '<?xml version="1.0"?>'.
+;;      As far as you can see, the header actually is not a valid XML - tags are not balanced.
+;;   * `stanza-reader-features` reads XMPP's 'features'
+;;
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Default reader for valid XML
+;;
 
 (defclass stanza-reader ()
   ((stanza-stream :accessor stanza-stream :initarg :stanza-stream :initform nil)
@@ -115,6 +147,48 @@
     (format stream "state: ~A, depth: ~D, result: ~A, last-chars: ~A"
             (state obj) (depth obj) (result obj) (last-chars obj))))
 
+(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader))
+  (let ((state (state stanza-reader))
+        (depth (depth stanza-reader)))
+    (and (eq depth 0)
+         (or (eq state :node-closed)
+             (eq state :tag-closed)))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Reader for XML header
+;;
+
+(defclass stanza-reader-header (stanza-reader) ())
+
+(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader-header))
+  (let ((state (state stanza-reader))
+        (depth (depth stanza-reader)))
+    (and (eq depth 1)
+         (eq state :node-opened))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Reader for XMPP's 'feature' stanza
+;;
+
+(defclass stanza-reader-features (stanza-reader)
+  ((push-result
+    :accessor push-result
+    :initarg :push-result
+    :initform nil)))
+
+(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader-features))
+  (let ((state (state stanza-reader))
+        (depth (depth stanza-reader)))
+    (and (eq depth 1)
+         (eq state :node-closed))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; FSM actions
+;;
+
 (defmethod stanza-reader-switch ((stanza-reader stanza-reader) state)
   (let ((current-state (state stanza-reader)))
     (when (not (eq current-state state))
@@ -124,13 +198,6 @@
                   ((eq state :tag-closed) -1)
                   ((eq state :node-closed) -1)
                   (t 0))))))
-        
-(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader))
-  (let ((state (state stanza-reader))
-        (depth (depth stanza-reader)))
-    (and (eq depth 0)
-         (or (eq state :node-closed)
-             (eq state :tag-closed)))))
 
 (defmethod stanza-reader-process ((stanza-reader stanza-reader))
   (let* ((state (state stanza-reader))
@@ -219,24 +286,3 @@
       (and (eq current-char #\<)
            (eq next-char #\/)))))
 
-
-(defclass stanza-reader-header (stanza-reader) ())
-
-(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader-header))
-  (let ((state (state stanza-reader))
-        (depth (depth stanza-reader)))
-    (and (eq depth 1)
-         (eq state :node-opened))))
-
-
-(defclass stanza-reader-features (stanza-reader)
-  ((push-result
-    :accessor push-result
-    :initarg :push-result
-    :initform nil)))
-
-(defmethod stanza-reader-complete-p ((stanza-reader stanza-reader-features))
-  (let ((state (state stanza-reader))
-        (depth (depth stanza-reader)))
-    (and (eq depth 1)
-         (eq state :node-closed))))
