@@ -41,7 +41,7 @@
 
    
    (presence-exit-stanza (presence-stanza)
-     ()
+     ((presence-type "unavailable"))
      
      (:methods
       ((stanza-to-xml ((stanza))

@@ -35,7 +35,7 @@
      (defclass ,domain-name (domain)
        ((mandatory-xep-deps :accessor depends-on-xep :initform ',mandatory-xep-deps)
         ,@slots))
-
+     
      (defmethod initialize-instance :after ((domain ,domain-name) &key)
        (with-slots (mandatory-xep-deps) domain
          (mapcar #'(lambda (dep)
@@ -50,9 +50,7 @@
      (defmethod ,@(alexandria:symbolicate 'make '- `,domain-name) ((session session))
        (with-slots (domains) session
          (when (eql ,lifetime :singleton)
-           (let ((key (getf (domains session) (string-to-keyword (symbol-name `,domain-name)))))
-             (when key
-               key)))
+           (getf (domains session) (string-to-keyword (symbol-name `,domain-name))))
          (let ((instance ((make-instance `,domain-name
                                          :username        (username        session)
                                          :server-hostname (server-hostname session)

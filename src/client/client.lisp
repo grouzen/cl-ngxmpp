@@ -7,6 +7,13 @@
 
 (in-package #:cl-ngxmpp-client)
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; The root class which represents a single client (in server-client terminology).
+;; So, for example: if you're writing a xmpp client that supports multiple accounts, you might
+;; want to make multiple `client` instances for each xmpp account.
+;;
+
 (defclass client ()
   ((username        :accessor username        :initarg :username        :initform "")
    (password        :accessor password        :initarg :password        :initform "")
@@ -14,25 +21,27 @@
    (server-hostname :accessor server-hostname :initarg :server-hostname :initform xmpp%:*default-hostname*)
    (server-port     :accessor server-port     :initarg :server-port     :initform xmpp%:*default-port*)
    (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)
-   (session         :accessor session         :initarg :session         :initform nil)
-   (adapter         :accessor adapter         :initarg :adapter         :initform (make-instance 'xmpp%:usocket-adapter))
    (debuggable      :accessor debuggable      :initarg :debuggable      :initform t)))
-
-(defmethod jid ((client client))
-  "Returns full jid, i.e. username@server.com/resource."
-  (concatenate
-   'string
-   (username client)
-   "@"
-   (server-hostname client)
-   "/"
-   (resource client)))
 
 (defmethod print-object ((obj client) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~A " (jid obj))
     (when (xml-stream obj)
       (print (xmpp%::connection (xml-stream obj)) stream))))
+
+(defmethod jid ((client client))
+  "Returns full jid, i.e. username@server.com/resource."
+  (concatenate 'string
+               (username client)
+               "@"
+               (server-hostname client)
+               "/"
+               (resource client)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Basic client's protocol: connect, disconnect, authorize
+;;
 
 (defmethod disconnect ((client client))
   (let* ((xml-stream (xml-stream client))
@@ -45,9 +54,10 @@
                (xmpp%:connectedp connection))
       (xmpp%:close-connection connection))))
 
-(defmethod connect ((client client))
-  (let ((connection (make-instance 'xmpp%:connection
-                                   :adapter  (adapter         client)
+(defmethod connect ((client client) &key (adapter 'xmpp%:usocket-adapter))
+  (let* ((adapter    (make-instance adapter))
+         (connection (make-instance 'xmpp%:connection
+                                   :adapter  adapter
                                    :hostname (server-hostname client)
                                    :port     (server-port     client))))
     (xmpp%:open-connection connection)
@@ -98,10 +108,15 @@ handled by the caller."
             (send-presence-show client :show "online")
             (proceed-stanza client)))))))
 
-
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;; TODO:
+;;
 ;; replace proceed-stanza with something else,
 ;; because it seems like HANDLE-STANZA interface is deprecated now.
+;;
+;; See README.md for information about hooks, `proceed-stanza` will be replaced
+;; by `run-hook`
 ;;
 (defmethod %bind% ((client client))
   (let ((xml-stream (xml-stream client))
@@ -136,19 +151,28 @@ handled by the caller."
       (xmpp%:handle-stanza-error (c) (format nil "~S" c)))))
 
 (defmethod proceed-stanza ((client client))
-  (xmpp%:handle-stanza (read-stanza client)))
+  (xmpp%:handle-stanza (receive-stanza client)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; Method just receives any stanza from the network
-;; and returns it. User can do anything with result
-;; of this method (i.e call handle-stanza).
-;; It's usefull for event-loop.
+;; Methods: receive, send
 ;;
-(defmethod read-stanza ((client client))
+
+(defmethod receive-stanza ((client client))
   (with-slots (xml-stream) client
     (xmpp%:with-stanza-input (xml-stream stanza)
       stanza)))
 
+(defmethod send-stanza ((client client) stanza-name &rest args)
+  (with-slots (xml-stream) client
+    (xmpp%:with-stanza-output (xml-stream)
+      (make-instance stanza-name args))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; TODO: delete
+;;
+;; DEPRECATED
 ;;
 ;; Methods for sending stanzas from core RFC.
 ;; For the rest of send-* methods, see client/xeps/xep-XXXX.lisp files.
@@ -172,4 +196,3 @@ handled by the caller."
     (xmpp%:with-stanza-output (xml-stream)
       (make-instance 'xmpp%:presence-show-stanza
                      :to to :from from :show show))))
-

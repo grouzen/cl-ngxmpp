@@ -90,7 +90,7 @@ needs to be implemented only for parental classes"))
 
 (defgeneric handle-stanza (stanza)
   (:documentation
-   "This handler must be overrided on client code."))
+   "This handler must be overrided on a client code."))
 
 (define-condition handle-stanza-error (simple-condition) ())
 

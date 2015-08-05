@@ -8,17 +8,24 @@
 (defpackage #:cl-ngxmpp-client
   (:use #:cl)
   (:nicknames #:xmpp)
-  (:export #:disconnect
+  (:export ;; Basics
+           #:disconnect
+           #:connect
            #:authorize
-           #:send-message
-           #:send-presence
            #:proceed-stanza
            #:proceed-stanza-loop
-           #:read-stanza
-           #:connect
+           #:receive-stanza
+           #:send-stanza
+
+           ;; Xeps
            #:define-stanza-handler
            #:call-methods-with-xep
            #:use-xeps
+           
+           ;; Deprecated
+           #:send-message
+           #:send-presence
+
            ;; Classes
            #:client
 
@@ -26,6 +33,7 @@
            #:open-session
            #:close-session
            #:create-session
+           
            ;;Classes
            #:session
            #:domain))

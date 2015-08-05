@@ -20,7 +20,7 @@
   ;;   (...))
   :routes ((add-entry    (s 'presence-subscribed-stanza (jid name subscription))
              (destruct-stanza-object-and-return-needed-fields))
-           (delete-entry (s 'presence-unsubscribed-stanza (jid name subscription_))
+           (delete-entry (s 'presence-unsubscribed-stanza (jid name subscription))
              (...)))
   :slots ((entries :accessor entries :initarg :entries :initform nil)))
 
