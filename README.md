@@ -17,22 +17,25 @@ WARNING: This library is under heavy development.
 - [X] Reorganize the structure of files and directories
 - [X] Be able to represent stanzas as XML-encoded strings
 - [X] Generic `print-debug` function
-- [ ] Get rid of `send-*` methods/functions, substitute them with macro `send-stanza`
-- [ ] Re-think and (it would be better) rewrite the code in `client/xeps/xeps.lisp`
+- [X] Write more descriptive README
+- [ ] Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
+- [ ] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
 - [ ] Rewrite tests using mocks
+- [ ] Add more comments and code documentation
 - [ ] Think about adding hooks for basic actions like: connecting, disconnecting, authenticating, etc.
 
       It could be represented as a set of well-defined wrappers over `xmpp%:handle-stanza` method.
-      There are some number of approaches to managable, user-defined, flexible hooks system:
-      global hooks, like: `(add-hook 'some-hook #'(lambda () ...))`; per-session hooks.
+      There are some number of approaches to managable, user-defined, flexible hook systems:
+      global hooks, like `(add-hook 'some-hook #'(lambda () ...))`; per-session hooks.
 
-- [ ] Try to split out xeps/async/etc functionality into different packages
-- [ ] Move `handle-stanza` generic method from `xmpp%` package into `xmpp`
-      (since, it's not a part of stanza's protocol anymore)
+- [CANCELED] Move `handle-stanza` generic method from `xmpp%` package into `xmpp`
+(since, it's not a part of stanza's protocol anymore)
 - [ ] Develop a high-level interface
 - [ ] Asynchronous high-level interface
-- [ ] Write more descriptive README
-- [ ] Develop a simple bot for conferences based on 'Markov chains' as another example
+- [ ] Try to split out xeps/async/etc functionality into different packages
+- [ ] Make an account with the name `cl-ngxmpp-say-hello-bot@someserver.foo`, then change the example of `echo-bot`
+so that it says me 'hello man!', so any user of the library can send me this funny message just running the example ;)
+- [ ] Develop a simple bot for conferences based on 'Markov chains' as a yet another example
 
 
 # Architecture Overview
@@ -62,37 +65,33 @@ XEPs easily.
 ## Diagram
 
 ```
- +----------------------------------------------------------------------------------------+
- |                                                                                        |
- |  +---------------------------------------------------------------------------------------+
- |  |                                                                                       |
- |  |  +--------------------------------------------------------------------------------------+
- |  |  |                                                                                      |
- |  |  |    +-------------,                 Core (Low-level)                                  |
- |  |  |    | +------------,                                                                  |
- |  |  |    | | +-----------,     +--------------+    +--------------+    +----------------+  |
- |  |  |    | | |           |     | XML-STREAM   |    | CONNECTION   |    | ADAPTER        |  |
- |  |  |    `-| |   XEPs    |     |              |    |              |    |                |  |
- |  |  |      `-|           |     | connection @----->| adapter @-------->| socket-stream  |  |
- |  |  |        +-----------+     +--------------+    +--------------+    +----------------+  |
- |  |  |                 ^                      ^                                             |
- |  |  |                 |               Client | (High-level)                                |
- |  |  |                 |                      |                                             |
- |  |  |   +-----------------+    +------------------+                                        |
- |  |  |   | SESSION     |   |    | CLIENT      |    |                                        |
- |  |  |   |             |   |    |             |    |                                        |
- |  |  |   | client @----|------->| xml-stream -@    |                                        |
- |  |  |   |             |   |    +------------------+                                        |
- |  |  |   | xeps-list @-*   |                                                                |
- |  |  |   |                 |    +-------------------,                                       |
- |  |  |   | domains @----------->| +-------------------,                                     |
- |  |  |   |                 |    | | +------------------+                                    |
- |  |  |   +-----------------+    | | |                  |                                    |
- |  |  |                          | | |     DOMAINs      |                                    |
- |  |  |                          `-| |                  |                                    |
- +--|  |                            `-|                  |                                    |
-    +--|                              +------------------+                                    |
-       +--------------------------------------------------------------------------------------+
+ +--------------------------------------------------------------------------------------+
+ |                                                                                      |
+ |     +-------------,                 Core (Low-level)                                 |
+ |     | +-----------,                                                                  |
+ |     | | +-----------,     +--------------+    +--------------+    +----------------+ |
+ |     | | |           |     | XML-STREAM   |    | CONNECTION   |    | ADAPTER        | |
+ |     `-| |   XEPs    |     |              |    |              |    |                | |
+ |       `-|           |     | connection @----->| adapter @-------->| socket-stream  | |
+ |         +-----------+     +--------------+    +--------------+    +----------------+ |
+ |                 ^                      ^                                             |
+ |                 |               Client | (High-level)                                |
+ |                 |                      |                                             |
+ |   +-----------------+    +------------------+                                        |
+ |   | SESSION     |   |    | CLIENT      |    |                                        |
+ |   |             |   |    |             |    |                                        |
+ |   | client @----|------->| xml-stream -@    |                                        |
+ |   |             |   |    +------------------+                                        |
+ |   | xeps-list @-*   |                                                                |
+ |   |                 |    +-------------------,                                       |
+ |   | domains @----------->| +-------------------,                                     |
+ |   |                 |    | | +------------------+                                    |
+ |   +-----------------+    | | |                  |                                    |
+ |                          | | |     DOMAINs      |                                    |
+ |                          `-| |                  |                                    |
+ |                            `-|                  |                                    |
+ |                              +------------------+                                    |
+ +--------------------------------------------------------------------------------------+
 
 ```
 

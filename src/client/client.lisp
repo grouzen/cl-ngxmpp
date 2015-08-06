@@ -76,7 +76,7 @@ handled by the caller."
     (when (xmpp%:tls-negotiatedp xml-stream)
       (setf (username client) username
             (password client) password)
-      ;; This hell is needed for suppression of errors.
+      ;; This hell is needed to supress errors.
       ;; Default xmpp%:handle-stanza signals a handle-stanza-error,
       ;; thus if client didn't define handle-stanza method for appropriate
       ;; type of stanza, authorization will fail.
@@ -97,9 +97,9 @@ handled by the caller."
                        `(progn ,@steps-restarts))))
           (with-restarts ((skip-handle-stanza () nil))
             (xmpp%:negotiate-sasl xml-stream
-                                      :username username
-                                      :password password
-                                      :mechanism mechanism)
+                                  :username username
+                                  :password password
+                                  :mechanism mechanism)
             (%bind% client)
             (%session% client)
             ;; TODO:
@@ -134,6 +134,7 @@ handled by the caller."
                      :id "sess"))
     (proceed-stanza client)))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; These methods are DEPRECATED, use cl-ngxmpp-client's high interface instead.
 ;;
@@ -165,7 +166,7 @@ handled by the caller."
 (defmethod send-stanza ((client client) stanza-name &rest args)
   (with-slots (xml-stream) client
     (xmpp%:with-stanza-output (xml-stream)
-      (make-instance stanza-name args))))
+      (apply #'make-instance stanza-name args))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -176,6 +177,7 @@ handled by the caller."
 ;; Methods for sending stanzas from core RFC.
 ;; For the rest of send-* methods, see client/xeps/xep-XXXX.lisp files.
 ;;
+
 (defmethod send-message ((client client) &key to body)
   (let ((xml-stream (xml-stream client)))
     (xmpp%:with-stanza-output (xml-stream)
