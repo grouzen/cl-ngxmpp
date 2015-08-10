@@ -8,7 +8,6 @@
 (in-package #:cl-ngxmpp)
 
 (define-xep (multi-user-chat :order "0045"
-                             :author "Nedokushev Michael <grouzen.hexy@gmail.com>"
                              :description "XEP 0045, Multi User Chat")
   
   ((message-groupchat-stanza (message-stanza)

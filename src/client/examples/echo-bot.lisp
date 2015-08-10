@@ -52,23 +52,20 @@
     (if (string= body "stop talking")
         (progn 
           (xmpp:send-message *client* :to from :body "Thanks for talking with me ;-)")
-          (xmpp:disconnect *client*))
+          (xmpp:disconnect-client *client*))
         (xmpp:send-message *client*
                            :to from
                            :body (format nil ">> ~A" body)))))
 
 (defun run (&key server-hostname username password mechanism to body)
-  (unless (null *client*)
-    (xmpp:disconnect *client*))
-  (setf *client* (make-instance 'xmpp:client
-                                :server-hostname server-hostname
-                                :debuggable t))
-  (xmpp:connect *client*)
-  (xmpp:authorize *client* :username username :password password :mechanism mechanism)
+  ;; (unless (null *client*)
+  ;;   (xmpp:disconnect-client *client*))
+  (setf *client* (make-instance 'xmpp:client :debuggable t))
+  (xmpp:connect-client *client* :server-hostname server-hostname)
+  (xmpp:login-client *client* :username username :password password :mechanism mechanism)
   (xmpp:send-message *client* :to to :body body)
-  (xmpp:send-message
-   *client*
-   :to to
-   :body "To end up the session, send a message: 'stop talking'")
+  (xmpp:send-message *client*
+                     :to to
+                     :body "To end up the session, send a message: 'stop talking'")
   ;; Wait for messages from your opponent
   (xmpp:proceed-stanza-loop *client*))

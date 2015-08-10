@@ -14,7 +14,7 @@
 ;; want to make multiple `client` instances for each xmpp account.
 ;;
 
-(defclass client (xmpp%:debuggable)
+(defclass client (xmpp%:debuggable xmpp%:statefull)
   ((username        :accessor username        :initarg :username        :initform "")
    (password        :accessor password        :initarg :password        :initform "")
    (resource        :accessor resource        :initarg :resource        :initform "cl-ngxmpp")
@@ -22,6 +22,9 @@
    (server-port     :accessor server-port     :initarg :server-port     :initform xmpp%:*default-port*)
    (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)))
 
+(defmethod initialize-instance :after ((client client) &key)
+  (setf (xmpp%::state client) 'disconnected))
+           
 (defmethod print-object ((obj client) stream)
   (print-unreadable-object (obj stream :type t :identity t)
     (format stream "~A " (jid obj))
@@ -39,26 +42,30 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
+;; State predicates
+;;
+
+(defmethod connectedp ((client client))
+  (with-accessors ((state xmpp%::state)) client
+    (or (eq state 'connectedp)
+        (eq state 'loggedin))))
+
+(defmethod loggedinp ((client client))
+  (eq (xmpp%::state client) 'loggedin))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
 ;; Basic client's protocol: connect, disconnect, authorize
 ;;
 
-(defmethod disconnect ((client client))
-  (let* ((xml-stream (xml-stream client))
-         (connection (when xml-stream
-                       (xmpp%::connection xml-stream))))
-    (when (and (not (null xml-stream))
-               (xmpp%:openedp xml-stream))
-      (xmpp%:close-stream xml-stream))
-    (when (and (not (null connection))
-               (xmpp%:connectedp connection))
-      (xmpp%:close-connection connection))))
-
-(defmethod connect ((client client) &key (adapter 'xmpp%:usocket-adapter))
+(defmethod connect-client ((client client) &key server-hostname (server-port 5222) (adapter 'xmpp%:usocket-adapter))
   (let* ((adapter    (make-instance adapter))
          (connection (make-instance 'xmpp%:connection
-                                   :adapter  adapter
-                                   :hostname (server-hostname client)
-                                   :port     (server-port     client))))
+                                    :adapter  adapter
+                                    :hostname server-hostname
+                                    :port     server-port)))
+    (setf (server-hostname client) server-hostname
+          (server-port     client) server-port)
     (xmpp%:open-connection connection)
     (when (xmpp%:connectedp connection)
       (let ((xml-stream (make-instance 'xmpp%:xml-stream
@@ -66,9 +73,19 @@
                                        :debuggable (xmpp%:debuggable client))))
         (setf (xml-stream client) xml-stream)
         (xmpp%:open-stream xml-stream)
-        (xmpp%:negotiate-tls xml-stream)))))
+        (xmpp%:negotiate-tls xml-stream)
+        (when (xmpp%:tls-negotiatedp xml-stream)
+          (setf (xmpp%::state client) 'connected))))))
 
-(defmethod authorize ((client client) &key username password mechanism)
+(defmethod disconnect-client ((client client))
+  (when (connectedp client)
+    (with-slots (xml-stream) client
+      (let ((connection (xmpp%::connection xml-stream)))
+        (xmpp%:close-stream xml-stream)
+        (xmpp%:close-connection connection)
+        (setf (xmpp%::state client) 'disconnectedp)))))
+
+(defmethod login-client ((client client) &key username password mechanism)
   "SASL authorization over TLS connection, should be called after the connection
 is established. In case of error signals negotiate-sasl-condition which should be
 handled by the caller."
@@ -105,7 +122,8 @@ handled by the caller."
             ;; TODO:
             ;; move this into session.lisp
             (send-presence-show client :show "online")
-            (proceed-stanza client)))))))
+            (proceed-stanza client)
+            (setf (xmpp%::state client) 'loggedin)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

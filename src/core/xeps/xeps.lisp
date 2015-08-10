@@ -86,15 +86,14 @@
 (defclass xep ()
   ((name        :accessor name        :initarg :name        :initform nil)
    (order       :accessor order       :initarg :order       :initform nil)
-   (author      :accessor author      :initarg :author      :initform "")
    (description :accessor description :initarg :description :initform "")
    (depends-on  :accessor depends-on  :initarg :depends-on  :initform nil) 
    (dispatchers :accessor dispatchers :initarg :dispatchers :initform nil)))
 
 (defmethod print-object ((obj xep) stream)
   (print-unreadable-object (obj stream :type t :identity t)
-    (format stream "name: ~A, order: ~A, author: ~A, description: ~A, depends-on: ~A"
-            (name obj) (order obj) (author obj) (description obj) (depends-on obj))))
+    (format stream "name: ~A, order: ~A, description: ~A, depends-on: ~A"
+            (name obj) (order obj) (description obj) (depends-on obj))))
 
 ;;
 ;; (with-xep (muc)
@@ -132,12 +131,11 @@
 ;; TODO: verification and usefull errors messages.
 ;;
 
-(defmacro define-xep ((xep-name &key order author description depends-on) &body body)
+(defmacro define-xep ((xep-name &key order description depends-on) &body body)
     `(let* ((xep-name-string (string-downcase (symbol-name ',xep-name)))
             (xep-obj         (make-instance 'xep
                                          :name        xep-name-string
                                          :order       ,order
-                                         :author      ,author
                                          :description ,description
                                          :depends-on  ',depends-on)))
        (setf (getf *xeps-list* (string-to-keyword xep-name-string)) xep-obj)

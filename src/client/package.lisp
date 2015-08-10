@@ -9,9 +9,10 @@
   (:use #:cl)
   (:nicknames #:xmpp)
   (:export ;; Basics
-           #:disconnect
-           #:connect
-           #:authorize
+           #:disconnect-client
+           #:connect-client
+           #:login-client
+           
            #:proceed-stanza
            #:proceed-stanza-loop
            #:receive-stanza
@@ -32,7 +33,6 @@
            ;; High interface: client/high/
            #:open-session
            #:close-session
-           #:create-session
            
            ;;Classes
            #:session

@@ -30,11 +30,13 @@
 ;; XML STREAM 
 ;;
 
-(defclass xml-stream (debuggable)
+(defclass xml-stream (debuggable statefull)
   ((connection :accessor connection :initarg :connection :initform nil)
    (id         :accessor id         :initarg :id         :initform nil)
-   (features   :accessor features   :initarg :features   :initform nil)
-   (state      :accessor state      :initarg :state      :initform 'closed)))
+   (features   :accessor features   :initarg :features   :initform nil)))
+
+(defmethod initialize-instance :after ((xml-stream xml-stream) &key)
+  (setf (state xml-stream) 'closed))
 
 (defmethod print-object ((obj xml-stream) stream)
   (print-unreadable-object (obj stream :type t :identity t)
@@ -75,9 +77,9 @@
     result))
 
 (defmethod close-stream ((xml-stream xml-stream))
-  (setf (state xml-stream) 'closed)
   (with-stream-xml-output (xml-stream)
-    (stanza-to-xml (make-instance 'stream-close-stanza))))
+    (stanza-to-xml (make-instance 'stream-close-stanza)))
+  (setf (state xml-stream) 'closed))
 
 (defmethod restart-stream ((xml-stream xml-stream))
   (setf (features xml-stream) nil)

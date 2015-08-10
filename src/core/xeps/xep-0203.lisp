@@ -11,7 +11,6 @@
   (get-element-by-name (dom:first-child (xml-node stanza)) "delay"))
 
 (define-xep (delayed-delivery :order "0203"
-                              :author "Nedokushev Michael <grouzen.hexy@gmail.com>"
                               :description "XEP 0203, Delayed Delivery"
                               :depends-on (multi-user-chat))
 

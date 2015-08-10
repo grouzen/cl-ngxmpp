@@ -10,9 +10,16 @@
   (:nicknames #:xmpp%)
   (:export #:*default-hostname*
            #:*default-port*
-           ;; Methods
-           #:defcreate
+           
+           ;; Utils
+           #:debuggable
+           #:statefull
+
+           #:chain-statefull
            #:string-to-keyword
+           #:string-case
+           
+           ;; Methods
            #:negotiate-tls
            #:negotiate-sasl
            #:connectedp
@@ -36,8 +43,8 @@
            #:resolve-async-value
            #:print-debug
            #:get-stanza-xml-string
+           
            ;; Classes
-           #:debuggable
            #:connection
            #:xml-stream
            #:stanza-reader
@@ -46,6 +53,7 @@
            #:adapter
            #:usocket-adapter
            #:iolib-adapter
+           
            ;; Stanzas
            #:stanza
            #:message-stanza
@@ -59,6 +67,7 @@
            #:presence-subscribe-stanza
            #:presence-show-stanza
            #:unknown-stanza
+           
            ;; Conditions
            #:handle-stanza-error
            #:negotiate-sasl-error

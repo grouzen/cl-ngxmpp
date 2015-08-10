@@ -12,6 +12,30 @@
 ;;
 ;;
 
+(defclass statefull ()
+  ((state :accessor state :initarg :state :initform nil)))
+
+;; (defmacro chain-statefull (init-clause &body chain)
+;;   (labels ((unflat-chain (chain)
+;;              (if (null chain)
+;;                  nil
+;;                  (let ((next-clause  (car chain)))
+;;                    (if (= (length next-clause) 2)
+;;                        (let* ((predicate (first  next-clause))
+;;                               (action    (second next-clause))
+;;                               (unflatten (unflat-chain (cdr chain)))
+;;                               (actions   (cond ((eq (first action) 'let)
+;;                                                 `(,@action ,unflatten))
+;;                                                (t `(,@(cons action unflatten))))))
+                         
+;;                          `(when ,predicate ,actions))
+;;                        (error "The clause ~A has a wrong format" next-clause))))))
+;;     (let ((unflatten-chain (unflat-chain chain)))
+;;       `(progn
+;;          (unless (null ,init-clause)
+;;            ,init-clause)
+;;          ,unflatten-chain))))
+
 (defclass debuggable ()
   ((debuggable :accessor debuggable :initarg :debuggable :initform nil)))
 
