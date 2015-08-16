@@ -18,8 +18,8 @@ WARNING: This library is under heavy development.
 - [X] Be able to represent stanzas as XML-encoded strings
 - [X] Generic `print-debug` function
 - [X] Write more descriptive README
-- [ ] Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
-- [ ] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
+- [IN PROGRESS] Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
+- [X] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
 - [ ] Rewrite tests using mocks
 - [ ] Add more comments and code documentation
 - [ ] Think about adding hooks for basic actions like: connecting, disconnecting, authenticating, etc.

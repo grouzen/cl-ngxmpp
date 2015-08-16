@@ -22,13 +22,13 @@
                                      (:file "stanzas")
                                      (:file "tls-negotiation")
                                      (:file "sasl-negotiation")
-                                     (:module "adapters"
+                                     
+                                     (:file "xeps")
+                                     (:module "xeps/"
                                               :serial t
-                                              :components ((:file "adapters")
-                                                           (:file "usocket-adapter")))
-                                                           ;;(:file "iolib-adapter")))
-                                     (:module "xeps"
+                                              :components ((:file "xep-0045")
+                                                           (:file "xep-0203")))
+                                     (:file "adapters")
+                                     (:module "adapters/"
                                               :serial t
-                                              :components ((:file "xeps")
-                                                           (:file "xep-0045")
-                                                           (:file "xep-0203")))))))
+                                              :components ((:file "usocket-adapter")))))))

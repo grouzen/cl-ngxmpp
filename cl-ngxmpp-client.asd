@@ -17,11 +17,7 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "client")
-                                     (:module "xeps"
-                                              :components ((:file "xeps")
-                                                           (:file "xep-0045"))
-                                              :serial t)
-                                     (:module "high"
+                                     (:module "high/"
                                               :serial t
                                               :components ((:file "session")
                                                            (:file "domain")))))))

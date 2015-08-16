@@ -6,7 +6,7 @@
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
 (defpackage #:cl-ngxmpp-client.examples.echo-bot
-  (:use #:cl)
+  (:use #:cl #:xmpp%)
   (:import-from #:cl-ngxmpp-client #:define-stanza-handler)
   (:export #:run))
 
@@ -14,36 +14,33 @@
 
 (defvar *client* nil)
 
-(define-stanza-handler ((stanza stanza))
-  (write-line "Default handler."))
-
-(define-stanza-handler ((stanza presence-show-stanza))
+(defmethod xmpp%:handle-stanza ((stanza presence-show-stanza))
   (let ((from (xmpp%::from stanza))
-        (to   (xmpp%::to stanza))
+        (to   (xmpp%::to   stanza))
         (show (xmpp%::show stanza)))
     (write-line (format nil "Presence ~A -> ~A: ~A" from to show))))
 
-(define-stanza-handler ((stanza presence-subscribe-stanza))
-  (let ((from   (xmpp%::from stanza))
+(defmethod handle-stanza ((stanza presence-subscribe-stanza))
+  (let ((from   (xmpp%::from   stanza))
         (status (xmpp%::status stanza)))
     (write-line (format nil "Presence ~A wants to subscribe to you, with status ~A"
                         from status))))
           
-(define-stanza-handler ((stanza iq-get-stanza))
+(defmethod handle-stanza ((stanza iq-get-stanza))
   (let ((from (xmpp%::from stanza))
         (to   (xmpp%::to   stanza))
         (id   (xmpp%::id   stanza))
         (iq-type (xmpp%::iq-type stanza)))
     (write-line (format nil "IQ ~A (~A) ~A -> ~A" id iq-type from to))))
 
-(define-stanza-handler ((stanza iq-result-stanza))
-  (let ((id (xmpp%::id stanza))
+(defmethod handle-stanza ((stanza iq-result-stanza))
+  (let ((id      (xmpp%::id      stanza))
         (iq-type (xmpp%::iq-type stanza))
-        (to (xmpp%::to stanza))
-        (from (xmpp%::from stanza)))
+        (to      (xmpp%::to      stanza))
+        (from    (xmpp%::from    stanza)))
     (write-line (format nil "IQ ~A (~A) ~A -> ~A" id iq-type from to))))
 
-(define-stanza-handler ((stanza message-stanza))
+(defmethod handle-stanza ((stanza message-stanza))
   (let ((from (xmpp%::from stanza))
         (to   (xmpp%::to   stanza))
         (body (xmpp%::body stanza)))

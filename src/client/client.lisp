@@ -215,3 +215,16 @@ handled by the caller."
     (xmpp%:with-stanza-output (xml-stream)
       (make-instance 'xmpp%:presence-show-stanza
                      :to to :from from :show show))))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; (defun use-xeps (names)
+;;   (xmpp%:use-xeps names)
+;;   (loop
+;;      :for name :in names
+;;      :do (let ((xep-methods (getf *xeps-methods* (xmpp%:string-to-keyword name))))
+;;            ;; TODO: throw error that xep doesn't exist
+;;            (when (and (xmpp%:xep-exists-p name) xep-methods)
+;;              (loop
+;;                 :for method-closure :in xep-methods
+;;                 :do (funcall method-closure))))))

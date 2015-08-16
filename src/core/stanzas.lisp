@@ -187,10 +187,12 @@ needs to be implemented only for parental classes"))
 (defstanza stanza ()
     (xml-node)
 
-  (handle-stanza ((stanza))
-    (error 'handle-stanza-error
-           :format-control "Default stanza handler was called. Please define handler for this type of stanza"))
- 
+  ;; (handle-stanza ((stanza))
+  ;;   (error 'handle-stanza-error
+  ;;          :format-control "Default stanza handler was called. Please define handler for this type of stanza"))
+
+  (handle-stanza ((stanza)) nil)
+  
   (make-stanza ((stanza) class-name)
     (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza))))
 
