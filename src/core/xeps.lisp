@@ -9,27 +9,31 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; The registry of registered (available) XEPs
+;; The List of (available) XEPs.
 ;;
-;; This is plist in format:
+;; Structure:
 ;;
-;; '(:xep-name xep-class :...)
+;;   '(:xep-name xep-class ...)
 ;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
   (defvar *xeps-list* nil))
 
+;; Wrappers
+
 (defun get-xep (xep-name)
   (getf *xeps-list* (string-to-keyword xep-name)))
 
-(defun xep-exists-p (xep-name)
+(defun xep-available-p (xep-name)
   (get-xep xep-name))
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Attention!
 ;; These two function affect global state,
 ;; because they change *stanzas-dispatchers*.
 ;;
+
 (defun use-xeps (names)
   (let ((xeps-list (if (null names)
                        (loop :for (k v) :on *xeps-list* :by #'cddr
@@ -45,7 +49,12 @@
 ;;                                names
 ;;                                :test #'string=))
 ;;                    *stanzas-dispatchers*)))
-  
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; TODO: comments
+;;
+
 (defun build-stanzas-dispatchers% (xeps-list dispatchers)
   (labels ((find-first-dep (deps-list xeps-list)
              (when deps-list
@@ -82,6 +91,9 @@
               (build-stanzas-dispatchers% reordered-xeps-list dispatchers))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; TODO: comments
+;;
 
 (defclass xep ()
   ((name        :accessor name        :initarg :name        :initform nil)
@@ -95,38 +107,10 @@
     (format stream "name: ~A, order: ~A, description: ~A, depends-on: ~A"
             (name obj) (order obj) (description obj) (depends-on obj))))
 
-;;
-;; (with-xep (muc)
-;;   (push #'(lambda (s) t) (dispatchers muc)))
-;;
-(defmacro with-xep ((xep-name) &body body)
-  (let ((xeps-list-keyword (string-to-keyword (symbol-name `,xep-name))))
-    `(let ((,xep-name (getf *xeps-list* ,xeps-list-keyword)))
-       ,@body)))
-  
-
-(defmacro make-stanza-with-xep (xep-name stanza-obj stanza-class)
-  `(make-stanza ,stanza-obj (alexandria:symbolicate ',xep-name '- ,stanza-class)))
-
-;;
-;; (with-wrapper ((muc message-stanza) stanza)
-;;   (cxml:with-elemnt "foo"
-;;     ...))
-;;  =>
-;; (with-muc-message-stanza (stanza)
-;;   (cxml:with-element "foo"
-;;     ...))
-;;
-(defmacro with-wrapper (((xep-name stanza-name) stanza) &body body)
-  (let ((wrapper-name (alexandria:symbolicate 'with '- `,xep-name '- `,stanza-name)))
-    `(,wrapper-name (,stanza)
-       ,@body)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; Please, define XEPs using this DSL
-;;
-;; You can find an example how to use `define-xep`, look inside any xep-[0-9]{4}.lisp file ;)  
+;; DSL that helps you to define a entire XEP in terms of stanzas and methods over them.
+;; You can find examples how to use it inside `src/core/xeps/` directory.
 ;;
 ;; TODO: verification and usefull errors messages.
 ;;
@@ -163,16 +147,17 @@
     ;;
     ;; Here we're pushing dispatcher into a structure like:
     ;; (dispatchers <xep>) => (:super-class-stanza-name ((stanza-name #'lambda) ...) ...)
-    ;; 
+    ;;
+    ;; TODO:
+    ;;   use hashmap instead of plist
     (when dispatcher
       (let ((dispatcher-arg  (car dispatcher))
             (dispatcher-body (cdr dispatcher)))
         (push
-         `(with-xep (,xep-name)
-            (loop :for super-class :in '(,@super-classes)
-               :do (push (list ',stanza-name #'(lambda (,@dispatcher-arg) ,@dispatcher-body))
-                         (getf (dispatchers ,xep-name)
-                               (string-to-keyword (symbol-name super-class))))))
+         `(loop :for super-class :in '(,@super-classes)
+             :do (push (list ',stanza-name #'(lambda (,@dispatcher-arg) ,@dispatcher-body))
+                       (getf (dispatchers (getf *xeps-list* (string-to-keyword (symbol-name ',xep-name))))
+                             (string-to-keyword (symbol-name super-class)))))
          definitions)))
     (setf definitions (reverse definitions))       
     `(progn ,@definitions)))

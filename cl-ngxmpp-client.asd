@@ -17,9 +17,7 @@
                         :serial t
                         :components ((:file "package")
                                      (:file "client")
-                                     (:module "high/"
-                                              :serial t
-                                              :components ((:file "session")
-                                                           (:file "domain")))))))
+                                     (:file "session")
+                                     (:file "domain")))))
 
 

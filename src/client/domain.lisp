@@ -32,18 +32,18 @@
 (defmacro define-domain (domain-name &optional (lifetime :singleton)
                                        (&rest mandatory-xep-deps) &body slots)
   `(progn
-     (defclass ,domain-name (domain)
-       ((mandatory-xep-deps :accessor depends-on-xep :initform ',mandatory-xep-deps)
-        ,@slots))
+     (defclass ,domain-name (domain) (,@slots))
      
      (defmethod initialize-instance :after ((domain ,domain-name) &key)
        (with-slots (mandatory-xep-deps) domain
+         ;; Check if XEP is available for current session 
          (mapcar #'(lambda (dep)
                      (unless (member dep (xeps-list domain))
                        (error (make-condition 'domain-error
                                               :format-control "You should use one of specified xeps: ~A"
                                               :format-arguments (list mandatory-xep-deps)))))
-                 mandatory-xep-deps)))
+                 mandatory-xep-deps)
+         (setf (mandatory-xep-deps domain) mandatory-xep-deps)))
 
      ;; TODO: replace with macros which will take same arguments,
      ;;       and additional :routes argument.

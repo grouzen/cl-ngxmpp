@@ -224,7 +224,7 @@ handled by the caller."
 ;;      :for name :in names
 ;;      :do (let ((xep-methods (getf *xeps-methods* (xmpp%:string-to-keyword name))))
 ;;            ;; TODO: throw error that xep doesn't exist
-;;            (when (and (xmpp%:xep-exists-p name) xep-methods)
+;;            (when (and (xmpp%:xep-available-p name) xep-methods)
 ;;              (loop
 ;;                 :for method-closure :in xep-methods
 ;;                 :do (funcall method-closure))))))

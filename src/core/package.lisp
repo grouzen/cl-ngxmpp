@@ -35,7 +35,7 @@
            #:tls-negotiatedp
            #:sasl-negotiatedp
            #:handle-stanza
-           #:xep-exists-p
+           #:xep-available-p
            #:concat-symbols
            #:use-xeps
            #:stop-use-xeps

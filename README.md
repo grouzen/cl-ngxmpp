@@ -18,8 +18,12 @@ WARNING: This library is under heavy development.
 - [X] Be able to represent stanzas as XML-encoded strings
 - [X] Generic `print-debug` function
 - [X] Write more descriptive README
-- [IN PROGRESS] Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
+- [X] *CANCELLED* Move `handle-stanza` generic method from `xmpp%` package into `xmpp`
+(since, it's not a part of stanza's protocol anymore)
+- [ ] *IN PROGRESS* Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
+- [ ] Revisit `core/xeps.lisp`
+- [ ] Develop a high-level interface
 - [ ] Rewrite tests using mocks
 - [ ] Add more comments and code documentation
 - [ ] Think about adding hooks for basic actions like: connecting, disconnecting, authenticating, etc.
@@ -28,9 +32,6 @@ WARNING: This library is under heavy development.
       There are some number of approaches to managable, user-defined, flexible hook systems:
       global hooks, like `(add-hook 'some-hook #'(lambda () ...))`; per-session hooks.
 
-- [CANCELED] Move `handle-stanza` generic method from `xmpp%` package into `xmpp`
-(since, it's not a part of stanza's protocol anymore)
-- [ ] Develop a high-level interface
 - [ ] Asynchronous high-level interface
 - [ ] Try to split out xeps/async/etc functionality into different packages
 - [ ] Make an account with the name `cl-ngxmpp-say-hello-bot@someserver.foo`, then change the example of `echo-bot`
@@ -79,7 +80,7 @@ Not finished yet...
  |                 ^                      ^                                             |
  |                 |               Client | (High-level)                                |
  |                 |                      |                                             |
- |   +-----------------+    +------------------+                                        |
+ |   +-------------|---+    +-------------|----+                                        |
  |   | SESSION     |   |    | CLIENT      |    |                                        |
  |   |             |   |    |             |    |                                        |
  |   | client @----|------->| xml-stream -@    |                                        |
@@ -101,7 +102,7 @@ Not finished yet...
 
 Notice! Current examples are deprecated!
 
-You can find examples in `examples/` directory.
+You can find examples inside `src/client/examples/` directory.
 First you need to load examples system:
 
 ```commonlisp
