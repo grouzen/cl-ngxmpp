@@ -5,7 +5,7 @@
 ;;;;
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
-(in-package #:cl-ngxmpp)
+(in-package #:cl-ngxmpp-xeps)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

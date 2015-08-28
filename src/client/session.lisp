@@ -47,6 +47,9 @@
 ;; (defmethod close-session ((session session))
 ;;   (disconnect session))
 
+
+;; New API
+
 ;; (defclass session ()
 ;;   ((client    :accessor client    :initarg :client    :initform nil)
 ;;    (xeps-list :accessor xeps-list :initarg :xeps-list :initform nil)

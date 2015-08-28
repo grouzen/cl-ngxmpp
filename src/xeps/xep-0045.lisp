@@ -5,11 +5,11 @@
 ;;;;
 ;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
 
-(in-package #:cl-ngxmpp)
+(in-package #:cl-ngxmpp-xeps)
 
 (define-xep (multi-user-chat :order "0045"
                              :description "XEP 0045, Multi User Chat")
-  
+    
   ((message-groupchat-stanza (message-stanza)
      ()
 

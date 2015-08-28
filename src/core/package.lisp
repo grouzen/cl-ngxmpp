@@ -43,6 +43,10 @@
            #:resolve-async-value
            #:print-debug
            #:get-stanza-xml-string
+
+           ;; DSL
+           #:define-xep
+           #:defstanza
            
            ;; Classes
            #:connection

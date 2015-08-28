@@ -22,12 +22,6 @@
                                      (:file "stanzas")
                                      (:file "tls-negotiation")
                                      (:file "sasl-negotiation")
-                                     
-                                     (:file "xeps")
-                                     (:module "xeps/"
-                                              :serial t
-                                              :components ((:file "xep-0045")
-                                                           (:file "xep-0203")))
                                      (:file "adapters")
                                      (:module "adapters/"
                                               :serial t

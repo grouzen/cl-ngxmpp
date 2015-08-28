@@ -11,7 +11,7 @@
   :name "cl-ngxmpp-client"
   :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
   :license "Lisp-LGPL"
-  :depends-on (:cl-ngxmpp)
+  :depends-on (:cl-ngxmpp :cl-ngxmpp-xeps)
   :serial t
   :components ((:module "src/client"
                         :serial t

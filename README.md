@@ -23,7 +23,7 @@ WARNING: This library is under heavy development.
 - [ ] *IN PROGRESS* Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
 - [ ] Revisit `core/xeps.lisp`
-- [ ] Develop a high-level interface
+- [ ] ( *EPIC* ) Develop a high-level interface
 - [ ] Rewrite tests using mocks
 - [ ] Add more comments and code documentation
 - [ ] Think about adding hooks for basic actions like: connecting, disconnecting, authenticating, etc.
@@ -49,7 +49,7 @@ the idea of extendable design incorporating several layers.
 ### Low-level
 
 A low-level code that is responsible for such things like:
-connecting to a server through TCP socket, making the socket secure using TLS,
+connecting to server through TCP socket, making the socket secure using TLS,
 SASL authentication, XML parsing, and the core set of stanzas; is in the `xmpp%` package.
 So, in fact, it implements the basic blocks for the Core part of the protocol, consequently,
 theoretically, it can be used to implement not only the client side but also the server side.
@@ -58,16 +58,19 @@ theoretically, it can be used to implement not only the client side but also the
 
 High-level part is in the package `cl-ngxmpp-client` (there is `xmpp` alias for it) — the most
 interesting part for users of the library. It hides all low-level stuff under the hood,
-instead of that, it gives you well-bounded entities such as: roster, message chat, groupchat,
-file transfer, etc. The basic use-case suggests reacting on incoming events defining hooks
-available for particular entity. There is a simple EDSL which allows you to define your own
-XEPs easily.
+instead of that, it gives you well-bounded entities (futher I'll call them "domains") such as:
+roster, message chat, groupchat, file transfer, etc. The basic use-case suggests reacting on
+incoming events defining hooks available for particular entity. There is a simple EDSL which
+allows you to define your own XEPs easily.
 
 ## Diagram
 
 Not finished yet...
 
 ```
+
+                                      Global View
+
  +--------------------------------------------------------------------------------------+
  |                                                                                      |
  |     +-------------,                 Core (Low-level)                                 |
@@ -83,18 +86,30 @@ Not finished yet...
  |   +-------------|---+    +-------------|----+                                        |
  |   | SESSION     |   |    | CLIENT      |    |                                        |
  |   |             |   |    |             |    |                                        |
- |   | client @----|------->| xml-stream -@    |                                        |
+ |   | client @----|------->| xml-stream @`    |                                        |
  |   |             |   |    +------------------+                                        |
  |   | xeps-list @-*   |                                                                |
  |   |                 |    +-------------------,                                       |
  |   | domains @----------->| +-------------------,                                     |
  |   |                 |    | | +------------------+                                    |
  |   +-----------------+    | | |                  |                                    |
- |                          | | |     DOMAINs      |                                    |
- |                          `-| |                  |                                    |
- |                            `-|                  |                                    |
- |                              +------------------+                                    |
- +--------------------------------------------------------------------------------------+
+ |                          | | |     DOMAINs ---. |                                    |
+ |                          `-| |                | |                                    |
+ |                            `-|                | |                                    |
+ |                              +----------------|-+                                    |
+ +-----------------------------------------------|--------------------------------------+
+                                                 |
+                                                 V
+
+                                  Domain View
+
+
+                     SESSION                 DOMAIN
+
+     Network ------> route_stanza()          user-defined-routes 
+                                             (dispathers over stanza's type)
+                     domains
+
 
 ```
 
