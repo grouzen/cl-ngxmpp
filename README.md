@@ -23,7 +23,7 @@ WARNING: This library is under heavy development.
 - [ ] *IN PROGRESS* Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
 - [ ] Revisit `core/xeps.lisp`
-- [ ] ( *EPIC* ) Develop a high-level interface
+- [ ] Develop a high-level interface (EPIC)
 - [ ] Rewrite tests using mocks
 - [ ] Add more comments and code documentation
 - [ ] Think about adding hooks for basic actions like: connecting, disconnecting, authenticating, etc.

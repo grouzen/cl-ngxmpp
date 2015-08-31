@@ -3,13 +3,13 @@
 ;;;; This file is part of the CL-NGXMPP library, released under Lisp-LGPL.
 ;;;; See file COPYING for details.
 ;;;;
-;;;; Author: Nedokushev Michael <grouzen.hexy@gmail.com>
+;;;; Author: Michael Nedokushev <michael.nedokushev@gmail.com>
 
 (in-package #:cl-user)
 
 (asdf:defsystem #:cl-ngxmpp
   :name "cl-ngxmpp"
-  :author "Michael Nedokushev <grouzen.hexy@gmail.com>"
+  :author "Michael Nedokushev <michael.nedokushev@gmail.com>"
   :license "Lisp-LGPL"
   :depends-on (:blackbird :alexandria :usocket :cxml :babel :cl+ssl :cl-base64 :cl-sasl)
   :serial t
