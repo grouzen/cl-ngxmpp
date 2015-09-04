@@ -12,7 +12,7 @@
 ;; Stanzas
 ;; 
 
-(defstanza sasl-stanza (stanza)
+(defstanza sasl-element (meta-element)
     (identity-string (xmlns "urn:ietf:params:xml:ns:xmpp-sasl"))
   
   (xml-to-stanza ((stanza))
@@ -23,7 +23,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defstanza sasl-auth-stanza (sasl-stanza)
+(defstanza sasl-auth-element (sasl-element)
     ((mechanism "DIGEST-MD5"))
   
   (stanza-to-xml ((stanza))
@@ -35,7 +35,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defstanza sasl-response-stanza (sasl-stanza)
+(defstanza sasl-response-element (sasl-element)
     ()
 
   (stanza-to-xml ((stanza))
@@ -49,7 +49,7 @@
 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defstanza sasl-challenge-stanza (sasl-stanza)
+(defstanza sasl-challenge-element (sasl-element)
     ()
   
   (print-object ((obj) stream)
@@ -86,10 +86,10 @@
          (negotiation-result (string-case sasl-mechanism
                                ("PLAIN" (%sasl-plain-negotiation% xml-stream sasl-client))
                                ("DIGEST-MD5" (%sasl-digest-md5-negotiation% xml-stream sasl-client)))))
-    (cond ((typep negotiation-result 'success-stanza)
+    (cond ((typep negotiation-result 'success-element)
            (restart-stream xml-stream)
            (setf (state xml-stream) 'sasl-negotiated))
-          ((typep negotiation-result 'failure-stanza)
+          ((typep negotiation-result 'failure-element)
            (%sasl-fail% negotiation-result)))))
 
 ;; TODO: improve algorithm, now it's so dumb.
@@ -112,28 +112,28 @@
                         ;;      but in client-step server-input argument is ignored.
                         (sasl:client-step sasl-client nil))))
     (with-stanza-output (xml-stream)
-      (make-instance 'sasl-auth-stanza
+      (make-instance 'sasl-auth-element
                      :mechanism "PLAIN"
                      :identity-string step-response))
-    (with-stanza-input (xml-stream success-stanza)
-      success-stanza)))
+    (with-stanza-input (xml-stream success-element)
+      success-element)))
 
 (defmethod %sasl-digest-md5-negotiation% ((xml-stream xml-stream) sasl-client)
   (with-stanza-output (xml-stream)
-    (make-instance 'sasl-auth-stanza :mechanism "DIGEST-MD5"))
+    (make-instance 'sasl-auth-element :mechanism "DIGEST-MD5"))
   (with-stanza-input (xml-stream first-challenge-stanza)
-    (cond ((typep first-challenge-stanza 'sasl-challenge-stanza)
+    (cond ((typep first-challenge-stanza 'sasl-challenge-element)
            (let ((response (base64:usb8-array-to-base64-string
                             (sasl:client-step
                              sasl-client
                              (babel:string-to-octets (identity-string first-challenge-stanza))))))
              (with-stanza-output (xml-stream) ;; Send <response/>
-               (make-instance 'sasl-response-stanza :identity-string response))
+               (make-instance 'sasl-response-element :identity-string response))
              (with-stanza-input (xml-stream second-challenge-stanza) ;; Receive second <challenge/>
-               (cond ((typep second-challenge-stanza 'sasl-challenge-stanza)
+               (cond ((typep second-challenge-stanza 'sasl-challenge-element)
                       (with-stanza-output (xml-stream) ;; Send second and last <response/>
-                        (make-instance 'sasl-response-stanza))
-                      (with-stanza-input (xml-stream success-stanza) ;; Receive <success/>
-                        success-stanza))
-                     ((typep second-challenge-stanza 'failure-stanza) (%sasl-fail% second-challenge-stanza))))))
-          ((typep first-challenge-stanza 'failure-stanza) (%sasl-fail% first-challenge-stanza)))))
+                        (make-instance 'sasl-response-element))
+                      (with-stanza-input (xml-stream success-element) ;; Receive <success/>
+                        success-element))
+                     ((typep second-challenge-stanza 'failure-element) (%sasl-fail% second-challenge-stanza))))))
+          ((typep first-challenge-stanza 'failure-element) (%sasl-fail% first-challenge-stanza)))))

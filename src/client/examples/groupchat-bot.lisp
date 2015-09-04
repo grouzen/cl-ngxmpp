@@ -39,15 +39,15 @@
   (let ((from (xmpp%:from stanza))
         (to   (xmpp%:to   stanza))
         (id   (xmpp%:id   stanza))
-        (iq-type (xmpp%:iq-type stanza)))
-    (write-line (format nil "IQ ~A (~A) ~A -> ~A" id iq-type from to))))
+        (stanza-type (xmpp%:stanza-type stanza)))
+    (write-line (format nil "IQ ~A (~A) ~A -> ~A" id stanza-type from to))))
 
 (define-stanza-handler ((stanza iq-result-stanza))
   (let ((id (xmpp%:id stanza))
-        (iq-type (xmpp%:iq-type stanza))
+        (stanza-type (xmpp%:stanza-type stanza))
         (to (xmpp%:to stanza))
         (from (xmpp%:from stanza)))
-    (write-line (format nil "IQ ~A (~A) ~A -> ~A" id iq-type from to))))
+    (write-line (format nil "IQ ~A (~A) ~A -> ~A" id stanza-type from to))))
 
 ;;
 ;; XEP (Multi User Chat) related handlers.

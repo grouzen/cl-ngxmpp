@@ -73,22 +73,25 @@
                (xep-deps            (mapcar #'(lambda (d) (string-downcase (symbol-name d))) (depends-on xep-obj)))
                (xep-dispatchers     (dispatchers xep-obj))
                ;; TODO: find out a simpler way
-               (ret-dispatchers     (let* ((new-disps (reduce #'append
-                                                              (mapcddr #'(lambda (k v)
-                                                                           (list k (append (getf dispatchers k) v)))
-                                                                       xep-dispatchers)))
-                                           (intersect-disps (reduce #'append
-                                                                    (mapcddr #'(lambda (k v)
-                                                                                 (let ((member-of-new-p (getf new-disps k)))
-                                                                                   (unless member-of-new-p
-                                                                                     (list k v))))
-                                                                             dispatchers))))
-                                      (append intersect-disps new-disps)))
-               (first-xep-dep       (find-first-dep xep-deps (cdr xeps-list)))
-               (reordered-xeps-list (cons first-xep-dep (remove-if #'(lambda (x) (equalp x first-xep-dep)) xeps-list))))
+               (ret-dispatchers
+                (let* ((new-disps (reduce #'append
+                                          (mapcddr #'(lambda (k v)
+                                                       (list k (append (getf dispatchers k) v)))
+                                                   xep-dispatchers)))
+                       (intersect-disps (reduce #'append
+                                                (mapcddr #'(lambda (k v)
+                                                             (let ((member-of-new-p (getf new-disps k)))
+                                                               (unless member-of-new-p
+                                                                 (list k v))))
+                                                         dispatchers))))
+                  (append intersect-disps new-disps)))
+               (first-xep-dep       (find-first-dep xep-deps (cdr xeps-list))))
           (if (or (null xep-deps) (null first-xep-dep))
               (build-stanzas-dispatchers% (cdr xeps-list) ret-dispatchers)
-              (build-stanzas-dispatchers% reordered-xeps-list dispatchers))))))
+              (let ((reordered-xeps-list (cons first-xep-dep
+                                               (remove-if #'(lambda (x)
+                                                              (equalp x first-xep-dep)) xeps-list))))
+                (build-stanzas-dispatchers% reordered-xeps-list dispatchers)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

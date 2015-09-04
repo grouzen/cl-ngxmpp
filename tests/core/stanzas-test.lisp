@@ -128,43 +128,43 @@
 ;; dispatch-stanza function
 ;;
 
-(deftestsuite stanzas-dispatcher-test (stanzas-test)
-  ((xeps-list '("multi-user-chat" "delayed-delivery"))
-   (groupchat-stanza-delayed
-    (string-to-stanza 'xmpp%::multi-user-chat-message-groupchat-stanza
-                      "<message type='groupchat'><delay/><body>test</body></message>"))
-   (groupchat-stanza
-    (string-to-stanza 'xmpp%:message-stanza
-                      "<message type='groupchat'><body>test</body></message>"))
-   (message-stanza-delayed
-    (string-to-stanza 'xmpp%:message-stanza
-                      "<message><delay/><body>test</body></message>"))
-   (unknown-stanza
-    (string-to-stanza 'xmpp%:unknown-stanza "<unsupported-unknown/>")))
-  (:setup    (xmpp%:use-xeps xeps-list))
-  (:teardown (setf xmpp%::*stanzas-dispatchers* nil))
-  :equality-test #'typep)
+;; (deftestsuite stanzas-dispatcher-test (stanzas-test)
+;;   ((xeps-list '("multi-user-chat" "delayed-delivery"))
+;;    (groupchat-stanza-delayed
+;;     (string-to-stanza 'xmpp%::multi-user-chat-message-groupchat-stanza
+;;                       "<message type='groupchat'><delay/><body>test</body></message>"))
+;;    (groupchat-stanza
+;;     (string-to-stanza 'xmpp%:message-stanza
+;;                       "<message type='groupchat'><body>test</body></message>"))
+;;    (message-stanza-delayed
+;;     (string-to-stanza 'xmpp%:message-stanza
+;;                       "<message><delay/><body>test</body></message>"))
+;;    (unknown-stanza
+;;     (string-to-stanza 'xmpp%:unknown-stanza "<unsupported-unknown/>")))
+;;   (:setup    (xmpp%:use-xeps xeps-list))
+;;   (:teardown (setf xmpp%::*stanzas-dispatchers* nil))
+;;   :equality-test #'typep)
 
-(addtest (stanzas-dispatcher-test)
-  unknown-stanza
-  (ensure-same (xmpp%::dispatch-stanza unknown-stanza 'xmpp%:stanza)
-               'xmpp%:unknown-stanza
-               :test #'typep))
+;; (addtest (stanzas-dispatcher-test)
+;;   unknown-stanza
+;;   (ensure-same (xmpp%::dispatch-stanza unknown-stanza 'xmpp%:stanza)
+;;                'xmpp%:unknown-stanza
+;;                :test #'typep))
 
-(addtest (stanzas-dispatcher-test)
-  correct-order-1
-  (ensure-same (xmpp%::dispatch-stanza groupchat-stanza-delayed 'xmpp%::multi-user-chat-message-groupchat-stanza)
-               'xmpp%::delayed-delivery-message-groupchat-stanza))
+;; (addtest (stanzas-dispatcher-test)
+;;   correct-order-1
+;;   (ensure-same (xmpp%::dispatch-stanza groupchat-stanza-delayed 'xmpp%::multi-user-chat-message-groupchat-stanza)
+;;                'xmpp%::delayed-delivery-message-groupchat-stanza))
 
-(addtest (stanzas-dispatcher-test)
-  correct-order-2
-  (ensure-same (xmpp%::dispatch-stanza groupchat-stanza 'xmpp%:message-stanza)
-               'xmpp%::multi-user-chat-message-groupchat-stanza))
+;; (addtest (stanzas-dispatcher-test)
+;;   correct-order-2
+;;   (ensure-same (xmpp%::dispatch-stanza groupchat-stanza 'xmpp%:message-stanza)
+;;                'xmpp%::multi-user-chat-message-groupchat-stanza))
 
-(addtest (stanzas-dispatcher-test)
-  correct-order-3
-  (ensure-same (xmpp%::dispatch-stanza message-stanza-delayed 'xmpp%:message-stanza)
-               'xmpp%::delayed-delivery-message-stanza))
+;; (addtest (stanzas-dispatcher-test)
+;;   correct-order-3
+;;   (ensure-same (xmpp%::dispatch-stanza message-stanza-delayed 'xmpp%:message-stanza)
+;;                'xmpp%::delayed-delivery-message-stanza))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -175,16 +175,16 @@
 ;; TODO: come up with a better solution for testing stanzas
 ;;
 
-(deftestsuite stream-stanza-stanzas-test (stanzas-test)
+(deftestsuite stream-element-stanzas-test (stanzas-test)
   ((features-stanza
-    (string-to-stanza 'xmpp%::stream-features-stanza
+    (string-to-stanza 'xmpp%::stream-features-element
                       "<stream:stream xmlns='jabber:client' xmlns:stream='http://etherx.jabber.org/streams' id='3519827146' from='jabber.ru' version='1.0' xml:lang='ru'><stream:features><starttls xmlns='urn:ietf:params:xml:ns:xmpp-tls'/><compression xmlns='http://jabber.org/features/compress'><method>zlib</method></compression><push xmlns='p1:push'/><rebind xmlns='p1:rebind'/><ack xmlns='p1:ack'/><mechanisms xmlns='urn:ietf:params:xml:ns:xmpp-sasl'><mechanism>PLAIN</mechanism><mechanism>DIGEST-MD5</mechanism><mechanism>SCRAM-SHA-1</mechanism></mechanisms><c xmlns='http://jabber.org/protocol/caps' hash='sha-1' node='http://www.process-one.net/en/ejabberd/' ver='S4v2n+rKmTsgLFog7BtVvK2o660='/><register xmlns='http://jabber.org/features/iq-register'/></stream:features></stream:stream>")))
   (:equality-test #'typep))
    
-(addtest (stream-stanza-stanzas-test)
-  correct-stream-stanza
+(addtest (stream-element-stanzas-test)
+  correct-stream-element
   (ensure-same (xmpp%::xml-to-stanza features-stanza)
-               'xmpp%::stream-stanza))
+               'xmpp%::stream-element))
 
     
 

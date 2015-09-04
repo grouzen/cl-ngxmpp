@@ -22,6 +22,17 @@ WARNING: This library is under heavy development.
 (since, it's not a part of stanza's protocol anymore)
 - [ ] *IN PROGRESS* Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
+- [ ] Write more XEPs
+
+    - [ ] *IN PROGRESS* 0045 Multi User Chat (MUC)
+    - [X] 0203 Delayed Delivery
+    - [X] 0004 Data Forms
+    - [ ] 0077 In-Band Registration
+
+- [ ] Figure out how to validate stanzas (xml schema is a good option I think).
+Since there is no CL library for xmlschema, I can go further and try to develop one. It can be used for
+stanza's validation and generation, and can avoid to do less manual work in the future.
+- [ ] utility to generate stanza's id
 - [ ] Revisit `core/xeps.lisp`
 - [ ] Develop a high-level interface (EPIC)
 - [ ] Rewrite tests using mocks
@@ -37,8 +48,7 @@ WARNING: This library is under heavy development.
 - [ ] Make an account with the name `cl-ngxmpp-say-hello-bot@someserver.foo`, then change the example of `echo-bot`
 so that it says me 'hello man!', so any user of the library can send me this funny message just running the example ;)
 - [ ] Develop a simple bot for conferences based on 'Markov chains' as a yet another example
-
-
+    
 # Architecture Overview
 
 The XMPP constists of core and XEP parts, so the library tries to follow

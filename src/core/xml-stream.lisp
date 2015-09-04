@@ -78,7 +78,7 @@
 
 (defmethod close-stream ((xml-stream xml-stream))
   (with-stream-xml-output (xml-stream)
-    (stanza-to-xml (make-instance 'stream-close-stanza)))
+    (stanza-to-xml (make-instance 'stream-close-element)))
   (setf (state xml-stream) 'closed))
 
 (defmethod restart-stream ((xml-stream xml-stream))

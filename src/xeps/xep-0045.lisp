@@ -25,8 +25,8 @@
 
       :dispatcher ((stanza)
         (let* ((message-node (dom:first-child (xml-node stanza)))
-               (message-type (dom:get-attribute message-node "type")))
-          (equalp message-type "groupchat")))))
+               (stanza-type (dom:get-attribute message-node "type")))
+          (equalp stanza-type "groupchat")))))
                
 
    (presence-join-stanza (presence-stanza)
@@ -40,7 +40,7 @@
 
    
    (presence-exit-stanza (presence-stanza)
-     ((presence-type "unavailable"))
+     ((stanza-type "unavailable"))
      
      (:methods
       ((stanza-to-xml ((stanza))

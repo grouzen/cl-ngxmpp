@@ -9,7 +9,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defstanza starttls-stanza (stanza)
+(defstanza starttls-element (meta-element)
     ((xmlns "urn:ietf:params:xml:ns:xmpp-tls"))
   
   (stanza-to-xml ((stanza))
@@ -21,7 +21,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-(defstanza proceed-stanza (stanza)
+(defstanza proceed-element (meta-element)
     ()
 
   (xml-to-stanza ((stanza))
@@ -44,11 +44,11 @@
 
 (defmethod send-tls-negotiation ((xml-stream xml-stream))
   (with-stanza-output (xml-stream)
-    (make-instance 'starttls-stanza)))
+    (make-instance 'starttls-element)))
 
 (defmethod receive-tls-negotiation ((xml-stream xml-stream))
   (with-stanza-input (xml-stream stanza-input)
-    (cond ((typep stanza-input 'proceed-stanza)
+    (cond ((typep stanza-input 'proceed-element)
            (proceed-tls-negotiation xml-stream))
           ((typep stanza-input 'failure-stanza)
            (%tls-fail% stanza-input))
