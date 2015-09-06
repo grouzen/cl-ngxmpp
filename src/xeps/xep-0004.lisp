@@ -11,12 +11,16 @@
                         :description "XEP 0004, Data Forms")
 
   ;;
-  ;; Current XEP contains no 'stanzas', it contains regular xml-elements
-  ;; with the meaning that `stream-element` has (that's why it has '-element' suffix,
-  ;; but it uses the 'defstanza' functionality.
-  ;; 
-  ;; All elements on this XEP should be created by `make-instance` function,
-  ;; e.g. `(make-instance 'data-forms-x-element :xml-node (x-data-node stanza))`
+  ;; Current XEP contains no 'stanzas', instead it contains regular xml-elements
+  ;; with the same meaning as the `stream-element` "stanza" has.
+  ;;
+  ;; All elements presented here actually are building blocks for other "stanzas",
+  ;; it means that they will never be a top-level element (child of "<stream:stream>").
+  ;;
+  ;; Also, in fact this code serializes/deserializes from/to XML and does nothing else
+  ;; according to the given XML Schema -- http://xmpp.org/extensions/xep-0004.html#schema,
+  ;; and I believe that the rest of XMPP also shouldn't contain additional logic, so my
+  ;; idea is to generate such code using "XSD to S-exp" generator.
   ;;
   
   ((x-element (meta-element)
@@ -34,7 +38,7 @@
            (setf (x-type      stanza) (dom:get-attribute xml-node "type")
                  (title       stanza) (get-element-data (get-element-by-name xml-node "title"))
                  (intructions stanza) (mapcar #'get-element-data
-                                              (get-elements-by-name xml-node "instruction"))
+                                              (get-elements-by-name xml-node "instructions"))
                  (fields      stanza) (mapcar #'(lambda (el)
                                                   (xml-to-stanza (make-instance 'data-forms-field-element
                                                                                 :xml-node el)))
@@ -54,7 +58,7 @@
            (cxml:with-element "x"
              (cxml:attribute "xmlns" xmlns)
              (cxml:attribute "type"  x-type)
-             (mapcar #'(lambda (i) (cxml:with-element "instruction"
+             (mapcar #'(lambda (i) (cxml:with-element "instructions"
                                      (cxml:text i)))
                      instructions)
              (mapcar #'stanza-to-xml fields)
@@ -82,21 +86,21 @@
            stanza))
 
        (stanza-to-xml ((stanza))
-         (with-slots (desc required values options label var element-type)
-             (cxml:with-element "field"
-               (unless (null label)
-                 (cxml:attribute "label" label))
-               (unless (null var)
-                 (cxml:attribute "var" var))
-               (unless (null element-type)
-                 (cxml:attribute "type" element-type))
-               (unless (null desc)
-                 (cxml:with-element "desc"
-                   (cxml:text desc)))
-               (unless (null required)
-                 (cxml:with-element "required"))
-               (mapcar #'(lambda (v) (cxml:with-element "value" (cxml:text v))) field-values)
-               (mapcar #'(lambda (o) (cxml:with-element "options" (cxml:text o))) options)))))))
+         (with-slots (desc required values options label var element-type) stanza
+           (cxml:with-element "field"
+             (unless (null label)
+               (cxml:attribute "label" label))
+             (unless (null var)
+               (cxml:attribute "var" var))
+             (unless (null element-type)
+               (cxml:attribute "type" element-type))
+             (unless (null desc)
+               (cxml:with-element "desc"
+                 (cxml:text desc)))
+             (unless (null required)
+               (cxml:with-element "required"))
+             (mapcar #'(lambda (v) (cxml:with-element "value" (cxml:text v))) field-values)
+             (mapcar #'(lambda (o) (cxml:with-element "option" (cxml:text o))) options)))))))
 
    (field-option-element (meta-element)
      (option-values label)
