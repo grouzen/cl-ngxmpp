@@ -104,14 +104,14 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; The smallest piece of data in XMPP is so called 'stanza', in fact it is just a string.
-;; The reason why we need this code is that XMPP doesn't send any terminating symbols after
-;; stanzas, so we can't easily split a stream into separate XML pieces. So, to be able to do
-;; this we can use classical FSM approach.
+;; The smallest piece of data in XMPP is so called 'stanza', in fact it's just a string.
+;; The reason why we need this code is that XMPP is a "streaming" protocol (there is no
+;; delimiters between stanzas), thus we can't easily split a stream into separate XML pieces.
+;; This is a classical task for FSM (explicit in this case).
 ;;
-;; FSM for xml reading.
+;; FSM for reading XML.
 ;;
-;; Most of code taken and ported from:
+;; Most of the code is taken and ported from:
 ;; https://github.com/dmatveev/shampoo-emacs/blob/8302cc4e14653980c2027c98d84f9aa3d1b59ebb/shampoo.el#L400
 ;;
 ;; Thanks, yoghurt!
