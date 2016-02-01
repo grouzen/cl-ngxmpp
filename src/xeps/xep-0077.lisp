@@ -45,13 +45,12 @@
                           :phone        (field-required-p stanza "phone")
                           :url          (field-required-p stanza "url")
                           :date         (field-required-p stanza "date")
-                 (mapcar #'(lambda (v)
-                         (cxml:with-element "value"
-                           (cxml:text v)))
-                     option-values)))))))         :misc         (field-required-p stanza "misc")
+                          :misc         (field-required-p stanza "misc")
                           :text         (field-required-p stanza "text")
                           :key          (field-required-p stanza "key"))))
-       
        ;; helper
        (field-required-p ((stanza) field-name)
-         (get-element-by-name (dom:first-child (xml-node stanza)) field-name))
+         (get-element-by-name (dom:first-child (xml-node stanza)) field-name)))))))
+       
+
+

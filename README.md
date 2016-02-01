@@ -22,7 +22,7 @@ WARNING: This library is under heavy development.
 (since, it's not a part of stanza's protocol anymore)
 - [ ] *IN PROGRESS* Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
-- [ ] Write more XEPs
+- [ ] Write more XEPs (see next item)
 
     - [ ] *IN PROGRESS* 0045 Multi User Chat (MUC)
     - [X] 0203 Delayed Delivery
@@ -31,7 +31,8 @@ WARNING: This library is under heavy development.
 
 - [ ] Figure out how to validate stanzas (xml schema is a good option I think).
 Since there is no CL library for xmlschema, I can go further and try to develop one. It can be used for
-stanza's validation and generation, and can avoid to do less manual work in the future.
+stanza validation and generation, and can avoid manual work for these areas in the future.
+- [ ] Add hostname verification against SSL certificate ([https://tools.ietf.org/html/rfc6125#section-5](https://tools.ietf.org/html/rfc6125))
 - [ ] utility to generate stanza's id
 - [ ] Revisit `core/xeps.lisp`
 - [ ] Develop a high-level interface (EPIC)
