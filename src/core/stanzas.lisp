@@ -9,7 +9,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; Macros for receiving/sending stanzas.
+;; Tbe macros for receiving/sending stanzas.
 ;;
 
 (defmacro with-stanza-output ((xml-stream) &body body)
@@ -53,7 +53,7 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;    
 ;;
-;; The 'protocol' for defining stanzas
+;; The 'protocol' to define stanzas
 ;;
 
 (eval-when (:compile-toplevel :load-toplevel :execute)
@@ -201,9 +201,8 @@ needs to be implemented only for parental classes"))
 ;;
 
 (defstanza stanza (meta-element)
-    ;; According to the definition of "stanza" -- each type of stanza should have
-    ;; at least 4 attributes
-    ;; attributes on its root element: id, to, from, type
+    ;; According to the definition of "stanza" -- an each type of stanza should have
+    ;; at least 4 attributes in its root element: id, to, from, type
     (id to from stanza-type)
 
   ;; (make-stanza ((stanza) class-name)
