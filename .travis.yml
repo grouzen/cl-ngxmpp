@@ -4,10 +4,8 @@ env:
   matrix:
     - LISP=sbcl
     - LISP=ccl
-    - LISP=clisp
     
 install:
-#  - sudo apt-get install texinfo
   - if [ -x ./install.sh ] && head -2 ./install.sh | grep '^#cl-travis' > /dev/null;
     then
       ./install.sh;
@@ -18,6 +16,3 @@ install:
 script:
   - cl -e '(ql:quickload :cl-ngxmpp-test) 
            (cl-ngxmpp-test:run-all-tests)'
-           #(ql:quickload :cl-ngxmpp-client)'
-           #(ql:quickload :cl-ngxmpp-client-test)
-           #(cl-ngxmpp-client-test:run-all-tests)'

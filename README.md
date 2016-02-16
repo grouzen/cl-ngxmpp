@@ -9,6 +9,8 @@ WARNING: This library is under heavy development.
 
 # TODO:
 
+The prioritized list:
+
 - [X] Migrate from cl-async to blackbird library
 - [X] Fix Travis-CI build
 - [X] Code DSL to have more concise way to define stanzas
@@ -20,8 +22,13 @@ WARNING: This library is under heavy development.
 - [X] Write more descriptive README
 - [X] *CANCELLED* Move `handle-stanza` generic method from `xmpp%` package into `xmpp`
 (since, it's not a part of stanza's protocol anymore)
-- [ ] *IN PROGRESS* Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
+- [ ] *CAN'T DO* Get rid of `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove a code in the `client/xeps/xeps.lisp`
+- [ ] Prepare the core version of the library for getting it into quicklisp repo
+
+    - [ ] Show usage examples
+    - [ ] Merge the development and master branches to make a release
+    
 - [ ] Write more XEPs (see next item)
 
     - [ ] *IN PROGRESS* 0045 Multi User Chat (MUC)
@@ -47,7 +54,7 @@ stanza validation and generation, and can avoid manual work for these areas in t
 - [ ] Asynchronous high-level interface
 - [ ] Try to split out xeps/async/etc functionality into different packages
 - [ ] Make an account with the name `cl-ngxmpp-say-hello-bot@someserver.foo`, then change the example of `echo-bot`
-so that it says me 'hello man!', so any user of the library can send me this funny message just running the example ;)
+so that it says me 'hello man!', and any user of the library can send me this funny message just running the example ;)
 - [ ] Develop a simple bot for conferences based on 'Markov chains' as a yet another example
     
 # Architecture Overview
