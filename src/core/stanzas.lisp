@@ -75,18 +75,18 @@
     
 (defgeneric make-stanza (stanza class-name)
   (:documentation
-   "This method makes new instance of `class-name' stanza,
-fill it with the necessary fields taken from the parent,
-and calls `xml-to-stanza' with this new instance. This method
+   "This method makes a new instance of `class-name' stanza,
+fills it with the necessary fields taken from the parent,
+and calls `xml-to-stanza' with the new instance. This method
 needs to be implemented only for parental classes"))
 
 (defgeneric xml-to-stanza (stanza)
   (:documentation
-   "Method for serialization xml to one of the stanza's classes."))
+   "Transforms xml to one of the children of STANZA class."))
 
 (defgeneric stanza-to-xml (stanza)
   (:documentation
-   "Returns xml object which is transformed further to string."))
+   "Transforms a particular stanza instance to an xml object which then will be converted to string."))
 
 (defgeneric handle-stanza (stanza)
   (:documentation

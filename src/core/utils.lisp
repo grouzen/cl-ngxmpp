@@ -81,8 +81,8 @@ a better way tell me, please."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; For using condition with WITH-PROXY-ERROR macro,
-;; it should be a successor of the PROXY-ERROR condition.
+;; To use a condition with a WITH-PROXY-ERROR macro,
+;; it should be a successor of a PROXY-ERROR condition.
 ;;
 ;; In this example:
 ;;
