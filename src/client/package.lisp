@@ -17,11 +17,6 @@
            #:proceed-stanza-loop
            #:receive-stanza
            #:send-stanza
-
-           ;; Xeps
-           #:define-stanza-handler
-           #:call-methods-with-xep
-           #:use-xeps
            
            ;; Deprecated
            #:send-message
@@ -30,11 +25,13 @@
            ;; Classes
            #:client
 
-           ;; High interface: client/high/
-           #:open-session
-           #:close-session
+           ;; ;; High interface: client/high/
+           ;; #:open-session
+           ;; #:close-session
            
-           ;;Classes
-           #:session
-           #:domain))
+           ;; ;;Classes
+           ;; #:session
+           ;; #:domain
+           
+           ))
 

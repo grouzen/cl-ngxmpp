@@ -149,7 +149,7 @@ you can easily turn on needed XEPs (see a list of available XEPs in src/xeps/ di
                  "in-band-registration"
                  "delayed-delivery" ...))
 
-;; Each xep provides its own list of stanzas, these stanzas are usual stanzas
+;; Each xep provides its own list of stanzas, these stanzas are the same as usual stanzas
 ;; from the core (xmpp%) package. That means that you can use them the same
 ;; way as you did with core stanzas.
 ;;
@@ -201,7 +201,7 @@ into the `xmpp` (since, it's not a part of the stanza protocol anymore)
 - [X] Re-think and (it would be better) rewrite/remove some code in the `client/xeps/xeps.lisp`
 - [ ] Prepare the core version of the library for getting it into the quicklisp repo
 
-    - [ ] Show usage examples
+    - [X] Show usage examples
     - [ ] Merge the development and master branches to make a release
     
 - [ ] Write more XEPs (see next item)

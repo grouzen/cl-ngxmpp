@@ -7,4 +7,8 @@
 
 (defpackage #:cl-ngxmpp-xeps
   (:use #:cl #:xmpp%)
-  (:nicknames #:xmpp-xeps))
+  (:nicknames #:xmpp-xeps)
+  (:export ;; Utils
+           #:get-xep
+           #:xep-available-p
+           #:use-xeps))
