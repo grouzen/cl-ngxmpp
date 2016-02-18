@@ -25,7 +25,7 @@
 
       :dispatcher ((stanza)
         (let* ((message-node (dom:first-child (xml-node stanza)))
-               (stanza-type (dom:get-attribute message-node "type")))
+               (stanza-type  (dom:get-attribute message-node "type")))
           (equalp stanza-type "groupchat")))))
                
 

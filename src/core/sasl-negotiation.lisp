@@ -107,9 +107,10 @@
 (defmethod %sasl-plain-negotiation% ((xml-stream xml-stream) sasl-client)
   (print (cl-sasl::password sasl-client))
   (let ((step-response (base64:usb8-array-to-base64-string
-                        ;; BUG: I found a bug in cl-sasl.
-                        ;;      client-step throws error about server-input is nil,
-                        ;;      but in client-step server-input argument is ignored.
+                        ;; BUG: I found a bug in cl+ssl.
+                        ;;      A client-step throws an error about that a
+                        ;;      server-input is nil, but in the client-step
+                        ;;      the server-input argument is ignored.
                         (sasl:client-step sasl-client nil))))
     (with-stanza-output (xml-stream)
       (make-instance 'sasl-auth-element

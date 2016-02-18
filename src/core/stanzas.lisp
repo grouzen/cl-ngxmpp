@@ -76,8 +76,8 @@
 (defgeneric make-stanza (stanza class-name)
   (:documentation
    "This method makes a new instance of `class-name' stanza,
-fills it with the necessary fields taken from the parent,
-and calls `xml-to-stanza' with the new instance. This method
+fills it with necessary fields taken from a parent,
+and calls `xml-to-stanza' method with the new instance. This method
 needs to be implemented only for parental classes"))
 
 (defgeneric xml-to-stanza (stanza)

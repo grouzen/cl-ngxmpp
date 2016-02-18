@@ -37,8 +37,6 @@
            #:handle-stanza
            #:xep-available-p
            #:concat-symbols
-           #:use-xeps
-           #:stop-use-xeps
            #:stanza-reader-read-stream
            #:resolve-async-value
            #:print-debug

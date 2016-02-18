@@ -9,6 +9,6 @@
   (:use #:cl #:xmpp%)
   (:nicknames #:xmpp-xeps)
   (:export ;; Utils
-           #:get-xep
+           #:get-xep ;; TODO: consider removing this from the export list
            #:xep-available-p
-           #:use-xeps))
+           #:register-xeps))

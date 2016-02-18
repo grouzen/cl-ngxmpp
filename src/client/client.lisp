@@ -218,6 +218,9 @@ handled by the caller."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defmethod register-xep ((client client) xep-name)
+  
+
 ;; (defun use-xeps (names)
 ;;   (xmpp%:use-xeps names)
 ;;   (loop

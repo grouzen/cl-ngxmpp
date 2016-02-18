@@ -92,6 +92,8 @@ You shouldn't use it, it's an internal API.
 
 ## Using intermediate-level API
 
+Use this API for simple apps or as a foundation for your own extensions above the cl-ngxmpp library.
+
 The very basic example how to create a client, connect the client to a xmpp server,
 log in, send a message, and wait for a response:
 
@@ -145,9 +147,9 @@ you can easily turn on needed XEPs (see a list of available XEPs in src/xeps/ di
 ```commonlisp
 (ql:quickload :cl-ngxmpp-client)
 
-(xmpp:use-xeps '("multi-user-chat"
-                 "in-band-registration"
-                 "delayed-delivery" ...))
+(xmpp-xeps:register-xeps '("multi-user-chat"
+                           "in-band-registration"
+                           "delayed-delivery" ...))
 
 ;; Each xep provides its own list of stanzas, these stanzas are the same as usual stanzas
 ;; from the core (xmpp%) package. That means that you can use them the same
@@ -184,8 +186,6 @@ for messages from him/her in an infinite loop.
 
 # ToDo:
 
-The prioritized list:
-
 - [X] Migrate from cl-async to blackbird library
 - [X] Fix the Travis-CI build
 - [X] Develop a DSL to have a more concise way to define stanzas
@@ -199,32 +199,31 @@ The prioritized list:
 into the `xmpp` (since, it's not a part of the stanza protocol anymore)
 - [ ] *BLOCKED* Get rid of the `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove some code in the `client/xeps/xeps.lisp`
-- [ ] Prepare the core version of the library for getting it into the quicklisp repo
-
+- [ ] Prepare the core version of the library for getting it into quicklisp repo
     - [X] Show usage examples
     - [ ] Merge the development and master branches to make a release
-    
+- [ ] Revisit the `core/xeps.lisp`. The `xmpp-xeps:register-xeps` function should work
+in scope of `client` objects. Currently, it affects the global scope, so that if multiple
+`clients` are running in the same lisp image, they are writing/reading to/from a dynamic
+variable *stanzas-dispatchers*, that's a race condition.
 - [ ] Write more XEPs (see next item)
-
-    - [ ] *IN PROGRESS* 0045 Multi User Chat (MUC)
+    - [ ] *NOT FINISHED* 0045 Multi User Chat (MUC)
     - [X] 0203 Delayed Delivery
     - [X] 0004 Data Forms
-    - [ ] 0077 In-Band Registration
-
+    - [ ] *NOT FINISHED* 0077 In-Band Registration
 - [ ] Figure out how to validate stanzas (xml schema is a good option I guess).
 Since there is no CL library for xmlschema, I can go further and try to develop one. It can be used for
 stanza validation/generation, and can avoid a manual work for these areas in the future.
-- [ ] Add a hostname verification against a SSL certificate ([https://tools.ietf.org/html/rfc6125#section-5](https://tools.ietf.org/html/rfc6125))
+- [ ] Add the hostname verification against a SSL certificate ([https://tools.ietf.org/html/rfc6125#section-5](https://tools.ietf.org/html/rfc6125))
 - [ ] Implement an utility to generate the stanza id
-- [ ] Revisit the `core/xeps.lisp`
 - [ ] Develop a high-level interface (EPIC)
 - [ ] Rewrite the tests using mocks
 - [ ] Add more comments and code documentation
 - [ ] Think about adding hooks for the basic actions like: connecting, disconnecting, authenticating, etc.
-
-      It could be represented as a set of well-defined wrappers over the `xmpp%:handle-stanza` method.
-      There are some number of approaches to managable, user-defined, flexible hook systems:
-      global hooks, e.g. `(add-hook 'some-hook #'(lambda () ...))`; per-session hooks.
-
-- [ ] Try to split out a xeps/async/etc functionality into different packages
+It could be represented as a set of well-defined wrappers over the `xmpp%:handle-stanza` method.
+There are some number of approaches to managable, user-defined, flexible hook systems:
+global hooks, e.g. `(add-hook 'some-hook #'(lambda () ...))`; per-session hooks.
+- [ ] Improve security (SSL, TLS)
+    - [ ] Add a support for the modern cryptography mechanisms. There are limitations in cl+ssl library.
+- [ ] Develop a small tool for getting shell over xmpp.
 - [ ] Develop a simple MUC bot based on 'Markov chains' as an yet another example
