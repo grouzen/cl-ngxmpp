@@ -6,63 +6,37 @@
 ;;;; Author: Michael Nedokushev <michael.nedokushev@gmail.com>
 
 (defpackage #:cl-ngxmpp-client.examples.echo-bot
-  (:use #:cl #:xmpp%)
-  (:import-from #:cl-ngxmpp-client #:define-stanza-handler)
+  (:use #:cl)
   (:export #:run))
 
 (in-package #:cl-ngxmpp-client.examples.echo-bot)
 
-(defvar *client* nil)
+(defun run (&key server-hostname username password mechanism to message)
+  (labels ((handle-stanzas (xmpp-client)
+             (let ((stanza (xmpp:receive-stanza xmpp-client)))
+               (when (typep stanza 'xmpp%:message-stanza)
+                 (let ((to   (xmpp%::to   stanza))
+                       (from (xmpp%::from stanza))
+                       (body (xmpp%::body stanza)))
+                   (if (string= body "stop talking")
+                       (progn
+                         (xmpp:send-message xmpp-client :to from :body "Thanks for talking with me :)")
+                         (xmpp:disconnect-client xmpp-client))
+                       (xmpp:send-message xmpp-client
+                                          :to from
+                                          :body (format nil ">> ~A" body)))))
+               (when (xmpp:connectedp xmpp-client)
+                 (handle-stanzas xmpp-client)))))
+    
+    (let ((xmpp-client (make-instance 'xmpp:client :debuggable t)))
+      (xmpp:connect-client xmpp-client :server-hostname server-hostname)
+      (when (xmpp:connectedp xmpp-client)
+        (xmpp:login-client xmpp-client
+                           :username username
+                           :password password
+                           :mechanism mechanism)
+        (when (xmpp:loggedinp xmpp-client)
+          (xmpp:send-message xmpp-client :to to :body message)
+          (xmpp:send-message xmpp-client :to to :body "To end up the session, send me a message 'stop talking'")
+          (handle-stanzas xmpp-client))))))
 
-(defmethod xmpp%:handle-stanza ((stanza presence-show-stanza))
-  (let ((from (xmpp%::from stanza))
-        (to   (xmpp%::to   stanza))
-        (show (xmpp%::show stanza)))
-    (write-line (format nil "Presence ~A -> ~A: ~A" from to show))))
-
-(defmethod handle-stanza ((stanza presence-subscribe-stanza))
-  (let ((from   (xmpp%::from   stanza))
-        (status (xmpp%::status stanza)))
-    (write-line (format nil "Presence ~A wants to subscribe to you, with status ~A"
-                        from status))))
-          
-(defmethod handle-stanza ((stanza iq-get-stanza))
-  (let ((from (xmpp%::from stanza))
-        (to   (xmpp%::to   stanza))
-        (id   (xmpp%::id   stanza))
-        (stanza-type (xmpp%::stanza-type stanza)))
-    (write-line (format nil "IQ ~A (~A) ~A -> ~A" id stanza-type from to))))
-
-(defmethod handle-stanza ((stanza iq-result-stanza))
-  (let ((id      (xmpp%::id      stanza))
-        (stanza-type (xmpp%::stanza-type stanza))
-        (to      (xmpp%::to      stanza))
-        (from    (xmpp%::from    stanza)))
-    (write-line (format nil "IQ ~A (~A) ~A -> ~A" id stanza-type from to))))
-
-(defmethod handle-stanza ((stanza message-stanza))
-  (let ((from (xmpp%::from stanza))
-        (to   (xmpp%::to   stanza))
-        (body (xmpp%::body stanza)))
-    (write-line (format nil "~A -> ~A: ~A" from to body))
-    (write-line (format nil "XML: ~A" (xmpp%:get-stanza-xml-string stanza)))
-    (if (string= body "stop talking")
-        (progn 
-          (xmpp:send-message *client* :to from :body "Thanks for talking with me ;-)")
-          (xmpp:disconnect-client *client*))
-        (xmpp:send-message *client*
-                           :to from
-                           :body (format nil ">> ~A" body)))))
-
-(defun run (&key server-hostname username password mechanism to body)
-  ;; (unless (null *client*)
-  ;;   (xmpp:disconnect-client *client*))
-  (setf *client* (make-instance 'xmpp:client :debuggable t))
-  (xmpp:connect-client *client* :server-hostname server-hostname)
-  (xmpp:login-client *client* :username username :password password :mechanism mechanism)
-  (xmpp:send-message *client* :to to :body body)
-  (xmpp:send-message *client*
-                     :to to
-                     :body "To end up the session, send a message: 'stop talking'")
-  ;; Wait for messages from your opponent
-  (xmpp:proceed-stanza-loop *client*))
