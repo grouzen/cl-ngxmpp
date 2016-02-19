@@ -33,7 +33,7 @@
       items)
 
      (:methods
-      ((xml-to-stanza ((stanza))
+      ((xml-to-stanza ((stanza) dispatchers)
          (with-slots (xml-node) stanza
            (setf (x-type      stanza) (dom:get-attribute xml-node "type")
                  (title       stanza) (get-element-data (get-element-by-name xml-node "title"))
@@ -41,15 +41,18 @@
                                               (get-elements-by-name xml-node "instructions"))
                  (fields      stanza) (mapcar #'(lambda (el)
                                                   (xml-to-stanza (make-instance 'data-forms-field-element
-                                                                                :xml-node el)))
+                                                                                :xml-node el)
+                                                                 dispatchers))
                                               (get-elements-by-name xml-node "field"))
                  (reported    stanza) (let ((el get-element-by-name xml-node "reported"))
                                         (when el
                                           (xml-to-stanza (make-instance 'data-forms-reported-element
-                                                                        :xml-node el))))
+                                                                        :xml-node el)
+                                                         dispatchers)))
                  (items       stanza) (mapcar #'(lambda (el)
                                                   (xml-to-stanza (make-instance 'data-forms-item-element
-                                                                                :xml-node el)))
+                                                                                :xml-node el)
+                                                                 dispatchers))
                                               (get-elements-by-name xml-node "item")))
            stanza))
 
@@ -71,14 +74,15 @@
      (desc required field-values options label var element-type)
 
      (:methods
-      ((xml-to-stanza ((stanza))
+      ((xml-to-stanza ((stanza) dispatchers)
          (with-slots (xml-node) stanza
            (setf (desc     stanza) (get-element-data (get-element-by-name xml-node "desc"))
                  (required stanza) (not (nullp (get-element-by-name xml-node "required")))
                  (field-values   stanza) (mapcar #'get-element-data
                                            (get-elements-by-name xml-node "value"))
                  (options  stanza) (mapcar #'(lambda (el)
-                                               (xml-to-stanza (make-instance 'data-forms-field-option-element :xml-node el)))
+                                               (xml-to-stanza (make-instance 'data-forms-field-option-element :xml-node el)
+                                                              dispatchers))
                                            (get-elements-by-name xml-node "option"))
                  (label    stanza) (dom:get-attribute xml-node "label")
                  (var      stanza) (dom:get-attribute xml-node "var")
@@ -106,7 +110,7 @@
      (option-values label)
 
      (:methods
-      ((xml-to-stanza ((stanza))
+      ((xml-to-stanza ((stanza) dispatchers)
          (with-slots (xml-node) stanza
            (setf (option-values stanza) (mapcar #'get-element-data
                                                 (get-elements-by-name xml-node "value"))
@@ -126,12 +130,12 @@
      (fields)
 
      (:methods
-      ((xml-to-stanza ((stanza))
+      ((xml-to-stanza ((stanza) dispatchers)
          (with-slots (xml-node) stanza
            (setf (fields stanza)
                  (mapcar #'(lambda (f)
-                             (xml-to-stanza (make-instance 'data-forms-field-element
-                                                           :xml-node f)))
+                             (xml-to-stanza (make-instance 'data-forms-field-element :xml-node f)
+                                            dispatchers))
                          (get-elements-by-name xml-node "field")))
            stanza))
 

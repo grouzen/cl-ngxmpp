@@ -12,11 +12,15 @@
            #:disconnect-client
            #:connect-client
            #:login-client
+           #:connectedp
+           #:loggedinp
            
            #:proceed-stanza
            #:proceed-stanza-loop
            #:receive-stanza
            #:send-stanza
+
+           #:register-xeps
            
            ;; Deprecated
            #:send-message
@@ -25,6 +29,7 @@
            ;; Classes
            #:client
 
+           
            ;; ;; High interface: client/high/
            ;; #:open-session
            ;; #:close-session

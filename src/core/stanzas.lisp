@@ -16,10 +16,12 @@
   `(with-stream-xml-output (,xml-stream)
      (stanza-to-xml ,@body)))
 
-(defmacro with-stanza-input ((xml-stream stanza-input) &body body)
+(defmacro with-stanza-input ((xml-stream stanza-input dispatchers) &body body)
   (let ((xml-input (gensym "xml-input")))
     `(with-stream-xml-input (,xml-stream ,xml-input)
-       (let ((,stanza-input (xml-to-stanza (make-instance 'stanza :xml-node ,xml-input))))
+       (let ((,stanza-input (xml-to-stanza
+                             (make-instance 'stanza :xml-node ,xml-input)
+                             ,dispatchers)))
          ,@body))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -56,12 +58,12 @@
 ;; The 'protocol' to define stanzas
 ;;
 
-(eval-when (:compile-toplevel :load-toplevel :execute)
-  (defvar *stanzas-dispatchers* nil))
+;; (eval-when (:compile-toplevel :load-toplevel :execute)
+;;   (defvar *stanzas-dispatchers* nil))
 
-(defun dispatch-stanza (stanza super-stanza-class)
-  (let ((dispatchers (getf *stanzas-dispatchers*
-                           (string-to-keyword (symbol-name super-stanza-class)))))
+(defun dispatch-stanza (stanza super-stanza-class dispatchers)
+  (let ((xep-disps (getf dispatchers
+                         (string-to-keyword (symbol-name super-stanza-class)))))
     (labels ((dispatch (disp-list)
                (if (null disp-list)
                    (make-instance 'unknown-stanza :xml-node (xml-node stanza))
@@ -71,16 +73,16 @@
                      (if (funcall target-dispatcher stanza)
                          (make-stanza stanza target-stanza-class)
                          (dispatch (cdr disp-list)))))))
-      (dispatch dispatchers))))
+      (dispatch xep-disps))))
     
-(defgeneric make-stanza (stanza class-name)
+(defgeneric make-stanza (stanza class-name dispatchers) 
   (:documentation
    "This method makes a new instance of `class-name' stanza,
 fills it with necessary fields taken from a parent,
 and calls `xml-to-stanza' method with the new instance. This method
 needs to be implemented only for parental classes"))
 
-(defgeneric xml-to-stanza (stanza)
+(defgeneric xml-to-stanza (stanza dispatchers)
   (:documentation
    "Transforms xml to one of the children of STANZA class."))
 
@@ -186,8 +188,8 @@ needs to be implemented only for parental classes"))
 (defstanza meta-element ()
     (xml-node xmlns)
     
-  (make-stanza ((stanza) class-name)
-    (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza)))))
+  (make-stanza ((stanza) class-name dispatchers)
+    (xml-to-stanza (make-instance class-name :xml-node (xml-node stanza)) dispatchers)))
   
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -219,18 +221,18 @@ needs to be implemented only for parental classes"))
 
   (handle-stanza ((stanza)) t)
   
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let ((qname (dom:node-name (dom:first-child (xml-node stanza)))))
       (string-case qname
-        ("stream:stream"   (make-stanza stanza 'stream-element))
-        ("message"         (make-stanza stanza 'message-stanza))
-        ("failure"         (make-stanza stanza 'failure-element))
-        ("success"         (make-stanza stanza 'success-element))
-        ("proceed"         (make-stanza stanza 'proceed-element))
-        ("challenge"       (make-stanza stanza 'sasl-challenge-element))
-        ("iq"              (make-stanza stanza 'iq-stanza))
-        ("presence"        (make-stanza stanza 'presence-stanza))
-        (:default          (dispatch-stanza stanza 'stanza))))))
+        ("stream:stream"   (make-stanza stanza 'stream-element dispatchers))
+        ("message"         (make-stanza stanza 'message-stanza dispatchers))
+        ("failure"         (make-stanza stanza 'failure-element dispatchers))
+        ("success"         (make-stanza stanza 'success-element dispatchers))
+        ("proceed"         (make-stanza stanza 'proceed-element dispatchers))
+        ("challenge"       (make-stanza stanza 'sasl-challenge-element dispatchers))
+        ("iq"              (make-stanza stanza 'iq-stanza dispatchers))
+        ("presence"        (make-stanza stanza 'presence-stanza dispatchers))
+        (:default          (dispatch-stanza stanza 'stanza dispatchers))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -241,7 +243,7 @@ needs to be implemented only for parental classes"))
     (print-unreadable-object (obj stream :type t :identity t)
       (format stream "Unknown type of stanza: ~A" (dom:node-name (dom:first-child (xml-node obj))))))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     stanza))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -259,7 +261,7 @@ needs to be implemented only for parental classes"))
               (to obj) (from obj) (id obj) (xml-lang obj) (xmlns obj) (xmlns-stream obj) (version obj))))
 
 
-  (make-stanza ((stanza) class-name)
+  (make-stanza ((stanza) class-name dispatchers)
     (let* ((xml-node (xml-node stanza))
            (stream-node (dom:first-child xml-node)))
       (xml-to-stanza (make-instance class-name
@@ -270,15 +272,16 @@ needs to be implemented only for parental classes"))
                                     :xml-lang     (dom:get-attribute stream-node "xml:lang")
                                     :xmlns        (dom:get-attribute stream-node "xmlns")
                                     :xmlns-stream (dom:get-attribute stream-node "xmlns:stream")
-                                    :version      (dom:get-attribute stream-node "version")))))
+                                    :version      (dom:get-attribute stream-node "version"))
+                     dispatchers)))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let* ((xml-node (xml-node stanza))
            (child-qname (dom:node-name (dom:first-child (dom:first-child xml-node)))))
       (string-case child-qname
-        ("stream:features" (make-stanza stanza 'stream-features-element))
-        ("stream:error"    (make-stanza stanza 'stream-error-element))
-        (:default          (dispatch-stanza stanza 'stream-element)))))
+        ("stream:features" (make-stanza stanza 'stream-features-element dispatchers))
+        ("stream:error"    (make-stanza stanza 'stream-error-element dispatchers))
+        (:default          (dispatch-stanza stanza 'stream-element dispatchers)))))
 
   (stanza-to-xml ((stanza))
     (cxml:with-element "stream:stream"
@@ -305,7 +308,7 @@ needs to be implemented only for parental classes"))
               (features obj)))
     (call-next-method obj stream))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let ((features (features stanza)))
       (dom:map-node-list
        #'(lambda (node)
@@ -326,7 +329,7 @@ needs to be implemented only for parental classes"))
 (defstanza stream-close-element (stream-element)
     ()
   
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     stanza)
 
   (stanza-to-xml ((stanza))
@@ -366,7 +369,7 @@ needs to be implemented only for parental classes"))
   (stanza-to-xml ((stanza))
     (with-message-stanza stanza))
 
-  (make-stanza ((stanza) class-name)
+  (make-stanza ((stanza) class-name dispatchers)
     (let* ((message-node (dom:first-child (xml-node stanza)))
            (to           (dom:get-attribute message-node "to"))
            (from         (dom:get-attribute message-node "from"))
@@ -377,15 +380,16 @@ needs to be implemented only for parental classes"))
                                     :stanza-type stanza-type
                                     :from         from
                                     :to           to
-                                    :body         body))))
+                                    :body         body)
+                     dispatchers)))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let* ((xml-node     (xml-node stanza))
            (message-node (dom:first-child xml-node))
            (to           (dom:get-attribute message-node "to"))
            (from         (dom:get-attribute message-node "from"))
            (body         (get-element-data (get-element-by-name message-node "body")))
-           (disp         (dispatch-stanza stanza 'message-stanza)))
+           (disp         (dispatch-stanza stanza 'message-stanza dispatchers)))
       (if (typep disp 'unknown-stanza)
           (progn
             (setf (to stanza) to
@@ -422,7 +426,7 @@ needs to be implemented only for parental classes"))
   (stanza-to-xml ((stanza))
     (with-presence-stanza stanza))
 
-  (make-stanza ((stanza) class-name)
+  (make-stanza ((stanza) class-name dispatchers)
     (let* ((xml-node      (xml-node stanza))
            (presence-node (dom:first-child xml-node))
            (stanza-type (dom:get-attribute presence-node "type"))
@@ -432,26 +436,27 @@ needs to be implemented only for parental classes"))
                                     :xml-node xml-node
                                     :to to
                                     :from from
-                                    :stanza-type stanza-type))))
+                                    :stanza-type stanza-type)
+                     dispatchers)))
                                   
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let* ((xml-node      (xml-node stanza))
            (stanza-type (dom:get-attribute (dom:first-child xml-node) "type")))
       (string-case stanza-type
-        ("subscribe" (make-stanza stanza 'presence-subscribe-stanza))
-        ("error"     (make-stanza stanza 'presence-error-stanza))
+        ("subscribe" (make-stanza stanza 'presence-subscribe-stanza dispatchers))
+        ("error"     (make-stanza stanza 'presence-error-stanza dispatchers))
         (:default
             (let ((show (get-element-by-name (dom:first-child (xml-node stanza)) "show")))
               (if show
-                  (make-stanza stanza 'presence-show-stanza)
-                  (dispatch-stanza stanza 'presence-stanza))))))))
+                  (make-stanza stanza 'presence-show-stanza dispatchers)
+                  (dispatch-stanza stanza 'presence-stanza dispatchers))))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (defstanza presence-show-stanza (presence-stanza)
     ((show ""))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let* ((xml-node  (xml-node stanza))
            (show      (get-element-data (get-element-by-name (dom:first-child xml-node) "show"))))
       (setf (show stanza) show)
@@ -467,7 +472,7 @@ needs to be implemented only for parental classes"))
 (defstanza presence-subscribe-stanza (presence-stanza)
     ((status ""))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let* ((xml-node (xml-node stanza))
            (status   (get-element-data
                       (get-element-by-name (dom:first-child xml-node) "status"))))
@@ -484,7 +489,7 @@ needs to be implemented only for parental classes"))
 (defstanza presence-error-stanza (presence-stanza)
     ()
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     stanza))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
@@ -504,7 +509,7 @@ needs to be implemented only for parental classes"))
          (cxml:attribute "from" (from ,iq-stanza)))
        ,@body))
 
-  (make-stanza ((stanza) class-name)
+  (make-stanza ((stanza) class-name dispatchers)
     (let* ((xml-node (xml-node stanza))
            (iq-node (dom:first-child xml-node)))
       (xml-to-stanza (make-instance class-name
@@ -512,23 +517,24 @@ needs to be implemented only for parental classes"))
                                     :to       (dom:get-attribute iq-node "to")
                                     :from     (dom:get-attribute iq-node "from")
                                     :id       (dom:get-attribute iq-node "id")
-                                    :stanza-type  (dom:get-attribute iq-node "type")))))
+                                    :stanza-type  (dom:get-attribute iq-node "type"))
+                     dispatchers)))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let* ((xml-node (xml-node stanza))
            (stanza-type  (dom:get-attribute (dom:first-child xml-node) "type")))
       (string-case stanza-type
-        ("result" (make-stanza stanza 'iq-result-stanza))
-        ("error"  (make-stanza stanza 'iq-error-stanza))
-        ("get"    (make-stanza stanza 'iq-get-stanza))
-        (:default (dispatch-stanza stanza 'iq-stanza))))))
+        ("result" (make-stanza stanza 'iq-result-stanza dispatchers))
+        ("error"  (make-stanza stanza 'iq-error-stanza dispatchers))
+        ("get"    (make-stanza stanza 'iq-get-stanza dispatchers))
+        (:default (dispatch-stanza stanza 'iq-stanza dispatchers))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;  
 
 (defstanza iq-get-stanza (iq-stanza)
     ()
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     ;; IQ's type is set to "get" by default           
     stanza))
 
@@ -570,7 +576,7 @@ needs to be implemented only for parental classes"))
 (defstanza iq-result-stanza (iq-stanza)
     ()
   
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     stanza))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -578,7 +584,7 @@ needs to be implemented only for parental classes"))
 (defstanza iq-error-stanza (iq-stanza)
     ()
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     stanza))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -590,7 +596,7 @@ needs to be implemented only for parental classes"))
     (print-unreadable-object (obj stream :type t :identity t)
       (format stream "xmlns: ~A" (xmlns obj))))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (setf (xmlns stanza) (dom:get-attribute (dom:first-child (xml-node stanza)) "xmlns"))
     stanza))
   
@@ -599,7 +605,7 @@ needs to be implemented only for parental classes"))
 (defstanza success-element (meta-element)
     ((xmlns ""))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (with-slots (xmlns) stanza
       (setf xmlns (dom:get-attribute (dom:first-child (xml-node stanza)) "xmlns"))
     stanza))

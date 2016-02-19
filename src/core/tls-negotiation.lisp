@@ -16,7 +16,7 @@
     (cxml:with-element "starttls"
       (cxml:attribute "xmlns" (xmlns stanza))))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     stanza))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -24,7 +24,7 @@
 (defstanza proceed-element (meta-element)
     ()
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     stanza))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -47,11 +47,12 @@
     (make-instance 'starttls-element)))
 
 (defmethod receive-tls-negotiation ((xml-stream xml-stream))
-  (with-stanza-input (xml-stream stanza-input)
+  ;; We can omit dispatchers parameter here, because the xmpp protocol defines that
+  ;; it is an error when an incoming stanza is not a proceed-element stanza,
+  ;; so we don't care about dispatching in this case.
+  (with-stanza-input (xml-stream stanza-input nil)
     (cond ((typep stanza-input 'proceed-element)
            (proceed-tls-negotiation xml-stream))
-          ((typep stanza-input 'failure-stanza)
-           (%tls-fail% stanza-input))
           (t (%tls-fail% stanza-input)))))
 
 (defmethod proceed-tls-negotiation ((xml-stream xml-stream))
