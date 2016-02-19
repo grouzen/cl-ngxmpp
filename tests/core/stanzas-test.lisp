@@ -183,7 +183,7 @@
    
 (addtest (stream-element-stanzas-test)
   correct-stream-element
-  (ensure-same (xmpp%::xml-to-stanza features-stanza)
+  (ensure-same (xmpp%::xml-to-stanza features-stanza nil)
                'xmpp%::stream-element))
 
     

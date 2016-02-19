@@ -14,8 +14,8 @@
      ()
 
      (:methods
-      ((xml-to-stanza ((stanza))
-         (let ((disp (dispatch-stanza stanza 'multi-user-chat-message-groupchat-stanza)))
+      ((xml-to-stanza ((stanza) dispatchers)
+         (let ((disp (dispatch-stanza stanza 'multi-user-chat-message-groupchat-stanza dispatchers)))
            (if (typep disp 'unknown-stanza)
                stanza
                disp)))
@@ -53,12 +53,12 @@
       jid)
      
      (:methods
-      ((xml-to-stanza ((stanza))
+      ((xml-to-stanza ((stanza) dispatchers)
          (let* ((x-node      (get-x-node stanza))
                 (item-node   (get-element-by-name x-node "item"))
                 (affiliation (dom:get-attribute item-node "affiliation"))
                 (role        (dom:get-attribute item-node "role"))
-                (disp        (dispatch-stanza stanza 'multi-user-chat-presence-user-stanza)))
+                (disp        (dispatch-stanza stanza 'multi-user-chat-presence-user-stanza dispatchers)))
            (if (typep disp 'unknown-stanza)
                (progn
                  (setf (affiliation stanza) affiliation
@@ -76,7 +76,8 @@
                                          :from        (from stanza)
                                          :id          (id stanza)
                                          :affiliation affiliation
-                                         :role        role))))
+                                         :role        role)
+                          dispatchers)))
 
        ;; Helper for searhing "x" element with particular xmlns attr.
        (get-x-node ((stanza))
@@ -95,7 +96,7 @@
      (statuses)
 
      (:methods
-      ((xml-to-stanza ((stanza))
+      ((xml-to-stanza ((stanza) dispatchers)
          (let* ((x-node       (get-element-by-name (dom:first-child (xml-node stanza)) "x"))
                 (status-nodes (get-elements-by-name x-node "status")))
            (loop :for status-node :in status-nodes

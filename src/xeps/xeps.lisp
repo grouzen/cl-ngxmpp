@@ -34,12 +34,12 @@
 ;; because they change *stanzas-dispatchers*.
 ;;
 
-(defun register-xeps (names)
-  (let ((xeps-list (if (null names)
-                       (loop :for (k v) :on *xeps-list* :by #'cddr
-                          :collect (string-downcase (symbol-name k)))
-                       names)))
-    (setf *stanzas-dispatchers* (build-stanzas-dispatchers% xeps-list nil))))
+;; (defun register-xeps (names)
+;;   (let ((xeps-list (if (null names)
+;;                        (loop :for (k v) :on *xeps-list* :by #'cddr
+;;                           :collect (string-downcase (symbol-name k)))
+;;                        names)))
+;;     (setf *stanzas-dispatchers* (build-stanzas-dispatchers% xeps-list nil))))
 
 ;; WTF???
 ;; (defun stop-using-xeps (names)

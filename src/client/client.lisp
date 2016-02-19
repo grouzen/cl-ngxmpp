@@ -20,7 +20,8 @@
    (resource        :accessor resource        :initarg :resource        :initform "cl-ngxmpp")
    (server-hostname :accessor server-hostname :initarg :server-hostname :initform xmpp%:*default-hostname*)
    (server-port     :accessor server-port     :initarg :server-port     :initform xmpp%:*default-port*)
-   (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)))
+   (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)
+   (dispatchers     :accessor dispatchers     :initarg :dispatchers     :initform nil)))
 
 (defmethod initialize-instance :after ((client client) &key)
   (setf (xmpp%::state client) 'disconnected))
@@ -33,12 +34,8 @@
 
 (defmethod jid ((client client))
   "Returns full jid, i.e. username@server.com/resource."
-  (concatenate 'string
-               (username client)
-               "@"
-               (server-hostname client)
-               "/"
-               (resource client)))
+  (with-slots (username server-hostname resource) client
+    (concatenate 'string username "@" server-hostname "/" resource)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -47,7 +44,7 @@
 
 (defmethod connectedp ((client client))
   (with-accessors ((state xmpp%::state)) client
-    (or (eq state 'connectedp)
+    (or (eq state 'connected)
         (eq state 'loggedin))))
 
 (defmethod loggedinp ((client client))
@@ -177,8 +174,8 @@ handled by the caller."
 ;;
 
 (defmethod receive-stanza ((client client))
-  (with-slots (xml-stream) client
-    (xmpp%:with-stanza-input (xml-stream stanza)
+  (with-slots (xml-stream dispatchers) client
+    (xmpp%:with-stanza-input (xml-stream stanza dispatchers)
       stanza)))
 
 (defmethod send-stanza ((client client) stanza-name &rest args)
@@ -217,9 +214,20 @@ handled by the caller."
                      :to to :from from :show show))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; Methods to register/unregister XEPs
+;; 
 
-(defmethod register-xep ((client client) xep-name)
-  
+;;
+;; TODO: think about more flexible API (register-xep, unregister-xep, etc)
+;;       I'm not sure that it is necesseray at the moment.
+;;
+(defmethod register-xeps ((client client) xeps)
+  (let ((xeps-list (if (null xeps)
+                       (loop :for (k v) :on xmpp-xeps::*xeps-list* :by #'cddr
+                          :collect (string-downcase (symbol-name k)))
+                       xeps)))
+    (setf (dispatchers client) (xmpp-xeps::build-stanzas-dispatchers% xeps-list nil))))
 
 ;; (defun use-xeps (names)
 ;;   (xmpp%:use-xeps names)

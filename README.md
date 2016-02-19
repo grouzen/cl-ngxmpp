@@ -102,14 +102,14 @@ log in, send a message, and wait for a response:
 
 (let ((xmpp-client (make-instance 'xmpp:client :debuggable t)))
   (xmpp:connect-client xmpp-client :server-hostname "hostname")
-  (when (connectedp xmpp-client)
+  (when (xmpp:connectedp xmpp-client)
     (xmpp:login-client xmpp-client
                        :username "username"
                        :password "password"
                        ;; Only PLAIN and DIGEST-MD5 mechanisms are available due to the lack
                        ;; of support for others in the cl+ssl library
                        :mechanism "PLAIN or DIGEST-MD5")
-    (when (loggedinp xmpp-client)
+    (when (xmpp:loggedinp xmpp-client)
       (xmpp:send-message xmpp-client :to "to_jid" :body "message")
       (let ((response (xmpp:receive-stanza xmpp-client)))
         ;; Here you get the instance of one of the stanza classes (see src/core/stanzas.lisp file).
@@ -124,20 +124,20 @@ Another way to handle incoming stanzas, but I wouldn't recommend using it:
 
 ;; Define a method for handling stanzas of a type of 'message'
 (defmethod xmpp%:handle-stanza ((stanza xmpp%:message-stanza))
-  (do something with a recieved stanza))
+  (print stanza))
 
 (let ((xmpp-client (make-instance 'xmpp:client :debuggable t)))
   (xmpp:connect-client xmpp-client :server-hostname "hostname")
-  (when (connectedp xmpp-client)
+  (when (xmpp:connectedp xmpp-client)
     (xmpp:login-client xmpp-client
                        :username "username"
                        :password "password"
                        :mechanism "PLAIN or DIGEST-MD5")
-    (when (loggedinp xmpp-client)
+    (when (xmpp:loggedinp xmpp-client)
       (xmpp:send-message xmpp-client :to "to_jid" :body "message")
       ;; It waits for an incoming stanza, then calls an appropriate handle-stanza method.
-      ;; It's something like an asynchronous interface.
-      (xmpp:proceed-stanza xmpp-client)
+      ;; It's something like an asynchronous interface. See also xmpp:proceed-stanza-loop.
+      (xmpp:proceed-stanza xmpp-client))))
 
 ```
 
@@ -147,9 +147,10 @@ you can easily turn on needed XEPs (see a list of available XEPs in src/xeps/ di
 ```commonlisp
 (ql:quickload :cl-ngxmpp-client)
 
-(xmpp-xeps:register-xeps '("multi-user-chat"
-                           "in-band-registration"
-                           "delayed-delivery" ...))
+(let ((xmpp-client (make-instance 'xmpp:client :debuggable t)))
+  (xmpp:register-xeps xmpp-client '("multi-user-chat"
+                                    "delayed-delivery"))
+  ...)
 
 ;; Each xep provides its own list of stanzas, these stanzas are the same as usual stanzas
 ;; from the core (xmpp%) package. That means that you can use them the same
@@ -158,7 +159,7 @@ you can easily turn on needed XEPs (see a list of available XEPs in src/xeps/ di
 ;; Attention! The way to work with XEPs can be changed in the future!
 
 ```
-      
+
 # Examples:
 
 Notice! Current examples are deprecated!
@@ -202,7 +203,7 @@ into the `xmpp` (since, it's not a part of the stanza protocol anymore)
 - [ ] Prepare the core version of the library for getting it into quicklisp repo
     - [X] Show usage examples
     - [ ] Merge the development and master branches to make a release
-- [ ] Revisit the `core/xeps.lisp`. The `xmpp-xeps:register-xeps` function should work
+- [X] Revisit the `core/xeps.lisp`. The `xmpp-xeps:register-xeps` function should work
 in scope of `client` objects. Currently, it affects the global scope, so that if multiple
 `clients` are running in the same lisp image, they are writing/reading to/from a dynamic
 variable *stanzas-dispatchers*, that's a race condition.

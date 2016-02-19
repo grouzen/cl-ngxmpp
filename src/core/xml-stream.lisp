@@ -97,7 +97,7 @@
   (let* ((features-result
           (format nil "~A</stream:stream>" (read-from-stream xml-stream :stanza-reader 'stanza-reader-features)))
          (features-result-xml (cxml:parse features-result (cxml-dom:make-dom-builder)))
-         (features-stanza (xml-to-stanza (make-instance 'stanza :xml-node features-result-xml))))
+         (features-stanza (xml-to-stanza (make-instance 'stanza :xml-node features-result-xml) nil)))
     (setf (state xml-stream) 'opened)
     (setf (features xml-stream) features-stanza)
     (print-debug xml-stream "Received stream: ~A" features-result)))

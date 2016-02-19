@@ -15,7 +15,7 @@
 (defstanza sasl-element (meta-element)
     (identity-string (xmlns "urn:ietf:params:xml:ns:xmpp-sasl"))
   
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let* ((xml-node (xml-node stanza))
            (response-node (dom:first-child xml-node)))
       (setf (xmlns stanza) (dom:get-attribute response-node "xmlns"))
@@ -56,7 +56,7 @@
     (print-unreadable-object (obj stream :type t :identity t)
       (format stream "identity-string: ~A" (identity-string obj))))
 
-  (xml-to-stanza ((stanza))
+  (xml-to-stanza ((stanza) dispatchers)
     (let ((xml-node (xml-node stanza)))
       (setf (identity-string stanza)
             (base64:base64-string-to-string
@@ -116,13 +116,14 @@
       (make-instance 'sasl-auth-element
                      :mechanism "PLAIN"
                      :identity-string step-response))
-    (with-stanza-input (xml-stream success-element)
+    ;; dispatchers argument should be ommited.
+    (with-stanza-input (xml-stream success-element nil)
       success-element)))
 
 (defmethod %sasl-digest-md5-negotiation% ((xml-stream xml-stream) sasl-client)
   (with-stanza-output (xml-stream)
     (make-instance 'sasl-auth-element :mechanism "DIGEST-MD5"))
-  (with-stanza-input (xml-stream first-challenge-stanza)
+  (with-stanza-input (xml-stream first-challenge-stanza nil)
     (cond ((typep first-challenge-stanza 'sasl-challenge-element)
            (let ((response (base64:usb8-array-to-base64-string
                             (sasl:client-step
@@ -130,11 +131,11 @@
                              (babel:string-to-octets (identity-string first-challenge-stanza))))))
              (with-stanza-output (xml-stream) ;; Send <response/>
                (make-instance 'sasl-response-element :identity-string response))
-             (with-stanza-input (xml-stream second-challenge-stanza) ;; Receive second <challenge/>
+             (with-stanza-input (xml-stream second-challenge-stanza nil) ;; Receive second <challenge/>
                (cond ((typep second-challenge-stanza 'sasl-challenge-element)
                       (with-stanza-output (xml-stream) ;; Send second and last <response/>
                         (make-instance 'sasl-response-element))
-                      (with-stanza-input (xml-stream success-element) ;; Receive <success/>
+                      (with-stanza-input (xml-stream success-element nil) ;; Receive <success/>
                         success-element))
                      ((typep second-challenge-stanza 'failure-element) (%sasl-fail% second-challenge-stanza))))))
           ((typep first-challenge-stanza 'failure-element) (%sasl-fail% first-challenge-stanza)))))

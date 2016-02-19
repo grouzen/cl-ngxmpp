@@ -21,7 +21,7 @@
       (delay-xmlns "urn:xmpp:delay"))
 
      (:methods
-      ((xml-to-stanza ((stanza))
+      ((xml-to-stanza ((stanza) dispatchers)
          (let* ((delay-node  (get-element-by-name (dom:first-child (xml-node stanza)) "delay"))
                 (from        (dom:get-attribute delay-node "from"))
                 (stamp       (dom:get-attribute delay-node "stamp"))
@@ -36,7 +36,7 @@
      ()
 
      (:methods
-      ((xml-to-stanza ((stanza))
+      ((xml-to-stanza ((stanza) dispatchers)
          (call-next-method stanza)))
 
       :dispatcher ((stanza)
@@ -48,8 +48,8 @@
      ()
 
      (:methods
-      ((xml-to-stanza ((stanza))
-         (call-next-method stanza)))
+      ((xml-to-stanza ((stanza) dispatchers)
+         (call-next-method stanza dispatchers)))
 
       :dispatcher ((stanza)
         (delayed-delivery-dispatcher stanza))))))
