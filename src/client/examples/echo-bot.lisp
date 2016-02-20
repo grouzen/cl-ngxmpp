@@ -20,11 +20,12 @@
                        (body (xmpp%::body stanza)))
                    (if (string= body "stop talking")
                        (progn
-                         (xmpp:send-message xmpp-client :to from :body "Thanks for talking with me :)")
+                         (xmpp:send-stanza xmpp-client 'xmpp%:message-stanza
+                                           :to from :body "Thanks for talking with me :)")
                          (xmpp:disconnect-client xmpp-client))
-                       (xmpp:send-message xmpp-client
-                                          :to from
-                                          :body (format nil ">> ~A" body)))))
+                       (xmpp:send-stanza xmpp-client 'xmpp%:message-stanza
+                                         :to from
+                                         :body (format nil ">> ~A" body)))))
                (when (xmpp:connectedp xmpp-client)
                  (handle-stanzas xmpp-client)))))
     
@@ -36,7 +37,8 @@
                            :password password
                            :mechanism mechanism)
         (when (xmpp:loggedinp xmpp-client)
-          (xmpp:send-message xmpp-client :to to :body message)
-          (xmpp:send-message xmpp-client :to to :body "To end up the session, send me a message 'stop talking'")
+          (xmpp:send-stanza xmpp-client 'xmpp%:message-stanza :to to :body message)
+          (xmpp:send-stanza xmpp-client 'xmpp%:message-stanza :to to
+                            :body "To end up the session, send me a message 'stop talking'")
           (handle-stanzas xmpp-client))))))
 

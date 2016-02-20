@@ -55,7 +55,7 @@
 ;; Basic client's protocol: connect, disconnect, authorize
 ;;
 
-(defmethod connect-client ((client client) &key server-hostname (server-port 5222) (adapter 'xmpp%:usocket-adapter))
+(defmethod connect-client ((client client) &key server-hostname (server-port xmpp%:*default-port*) (adapter 'xmpp%:usocket-adapter))
   (let* ((adapter    (make-instance adapter))
          (connection (make-instance 'xmpp%:connection
                                     :adapter  adapter
@@ -118,8 +118,9 @@ handled by the caller."
             (%session% client)
             ;; TODO:
             ;; move this into session.lisp
-            (send-presence-show client :show "online")
-            (proceed-stanza client)
+            (send-stanza client 'xmpp%:presence-show-stanza :show "online")
+            ;; TODO: hooks
+            (receive-stanza client)
             (setf (xmpp%::state client) 'loggedin)))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -132,22 +133,18 @@ handled by the caller."
 ;; See README.md for information about hooks, `proceed-stanza` will be replaced
 ;; by `run-hook`
 ;;
+
 (defmethod %bind% ((client client))
-  (let ((xml-stream (xml-stream client))
-        (resource   (resource client)))
-    (xmpp%:with-stanza-output (xml-stream)
-      (make-instance 'xmpp%:iq-set-bind-stanza
-                     :id       "bind"
-                     :resource (resource client)))
-    (proceed-stanza client)))
+  (with-slots (resource) client
+    (send-stanza client 'xmpp%:iq-set-bind-stanza :id "bind" :resource resource)
+    (receive-stanza client)))
 
 (defmethod %session% ((client client))
-  (let ((xml-stream (xml-stream client)))
-    (xmpp%:with-stanza-output (xml-stream)
-      (make-instance 'xmpp%:iq-set-session-stanza
-                     :to (server-hostname client)
-                     :id "sess"))
-    (proceed-stanza client)))
+  (with-slots (server-hostname) client
+    (send-stanza client 'xmpp%:iq-set-session-stanza
+                 :to server-hostname
+                 :id "sess")
+    (receive-stanza client)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
@@ -157,6 +154,7 @@ handled by the caller."
 ;; These methods call `xmpp%:handle-stanza' callback
 ;; after receiving a message from network.
 ;;
+
 (defmethod proceed-stanza-loop ((client client))
   (let ((xml-stream (xml-stream client)))
     (handler-case
@@ -170,7 +168,7 @@ handled by the caller."
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;; Methods: receive, send
+;; Methods: receive-stanza, send-stanza
 ;;
 
 (defmethod receive-stanza ((client client))
@@ -182,36 +180,6 @@ handled by the caller."
   (with-slots (xml-stream) client
     (xmpp%:with-stanza-output (xml-stream)
       (apply #'make-instance stanza-name args))))
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;;
-;; TODO: delete
-;;
-;; DEPRECATED
-;;
-;; Methods for sending stanzas from core RFC.
-;; For the rest of send-* methods, see client/xeps/xep-XXXX.lisp files.
-;;
-
-(defmethod send-message ((client client) &key to body)
-  (let ((xml-stream (xml-stream client)))
-    (xmpp%:with-stanza-output (xml-stream)
-      (make-instance 'xmpp%:message-stanza
-                     :from (jid client)
-                     :to   to
-                     :body body))))
-
-(defmethod send-presence-subscribe ((client client) &key to from status)
-  (let ((xml-stream (xml-stream client)))
-    (xmpp%:with-stanza-output (xml-stream)
-      (make-instance 'xmpp%:presence-subscribe-stanza
-                     :to to :from from :status status))))
-
-(defmethod send-presence-show ((client client) &key to from show)
-  (let ((xml-stream (xml-stream client)))
-    (xmpp%:with-stanza-output (xml-stream)
-      (make-instance 'xmpp%:presence-show-stanza
-                     :to to :from from :show show))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;

@@ -86,11 +86,11 @@ To understand better what I mean I draw this diagram:
 
 # How To Use
 
-## Using low-level API
+## Low-level API
 
 You shouldn't use it, it's an internal API.
 
-## Using intermediate-level API
+## Intermediate-level API
 
 Use this API for simple apps or as a foundation for your own extensions above the cl-ngxmpp library.
 
@@ -110,7 +110,7 @@ log in, send a message, and wait for a response:
                        ;; of support for others in the cl+ssl library
                        :mechanism "PLAIN or DIGEST-MD5")
     (when (xmpp:loggedinp xmpp-client)
-      (xmpp:send-message xmpp-client :to "to_jid" :body "message")
+      (xmpp:send-stanza xmpp-client 'xmpp%:message-stanza :to "to_jid" :body "message")
       (let ((response (xmpp:receive-stanza xmpp-client)))
         ;; Here you get the instance of one of the stanza classes (see src/core/stanzas.lisp file).
         ;; Do whatever you want with it.
@@ -134,7 +134,7 @@ Another way to handle incoming stanzas, but I wouldn't recommend using it:
                        :password "password"
                        :mechanism "PLAIN or DIGEST-MD5")
     (when (xmpp:loggedinp xmpp-client)
-      (xmpp:send-message xmpp-client :to "to_jid" :body "message")
+      (xmpp:send-stanza xmpp-client 'xmpp%:message-stanza :to "to_jid" :body "message")
       ;; It waits for an incoming stanza, then calls an appropriate handle-stanza method.
       ;; It's something like an asynchronous interface. See also xmpp:proceed-stanza-loop.
       (xmpp:proceed-stanza xmpp-client))))
@@ -179,7 +179,7 @@ There is an `echo-bot.lisp` example, to run it type in REPL:
     :username        "<your jabber login>"
     :password        "<your jabber password>"
     :to              "<opponent's jid>"
-    :body            "<body of your message>")
+    :message         "<body of your message>")
 ```
 
 after that the bot will send a message to your opponent, and then will be waiting
@@ -198,7 +198,7 @@ for messages from him/her in an infinite loop.
 - [X] Make the README file more descriptive
 - [X] *CANCELLED* Move the `handle-stanza` generic method from the `xmpp%` package
 into the `xmpp` (since, it's not a part of the stanza protocol anymore)
-- [ ] *BLOCKED* Get rid of the `send-*` methods/functions, substitute them with a `send-stanza` macro
+- [X] Get rid of the `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove some code in the `client/xeps/xeps.lisp`
 - [ ] Prepare the core version of the library for getting it into quicklisp repo
     - [X] Show usage examples
@@ -215,7 +215,6 @@ variable *stanzas-dispatchers*, that's a race condition.
 - [ ] Figure out how to validate stanzas (xml schema is a good option I guess).
 Since there is no CL library for xmlschema, I can go further and try to develop one. It can be used for
 stanza validation/generation, and can avoid a manual work for these areas in the future.
-- [ ] Add the hostname verification against a SSL certificate ([https://tools.ietf.org/html/rfc6125#section-5](https://tools.ietf.org/html/rfc6125))
 - [ ] Implement an utility to generate the stanza id
 - [ ] Develop a high-level interface (EPIC)
 - [ ] Rewrite the tests using mocks
@@ -225,6 +224,7 @@ It could be represented as a set of well-defined wrappers over the `xmpp%:handle
 There are some number of approaches to managable, user-defined, flexible hook systems:
 global hooks, e.g. `(add-hook 'some-hook #'(lambda () ...))`; per-session hooks.
 - [ ] Improve security (SSL, TLS)
+    - [ ] Add the hostname verification against a SSL certificate ([https://tools.ietf.org/html/rfc6125#section-5](https://tools.ietf.org/html/rfc6125))
     - [ ] Add a support for the modern cryptography mechanisms. There are limitations in cl+ssl library.
 - [ ] Develop a small tool for getting shell over xmpp.
 - [ ] Develop a simple MUC bot based on 'Markov chains' as an yet another example
