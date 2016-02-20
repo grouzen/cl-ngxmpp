@@ -21,7 +21,7 @@
                    (if (string= body "stop talking")
                        (progn
                          (xmpp:send-stanza xmpp-client 'xmpp%:message-stanza
-                                           :to from :body "Thanks for talking with me :)")
+                                           :to from :body ">> Thanks for talking with me. Bye! :)")
                          (xmpp:disconnect-client xmpp-client))
                        (xmpp:send-stanza xmpp-client 'xmpp%:message-stanza
                                          :to from

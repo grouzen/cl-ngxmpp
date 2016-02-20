@@ -18,8 +18,8 @@
   ((username        :accessor username        :initarg :username        :initform "")
    (password        :accessor password        :initarg :password        :initform "")
    (resource        :accessor resource        :initarg :resource        :initform "cl-ngxmpp")
-   (server-hostname :accessor server-hostname :initarg :server-hostname :initform xmpp%:*default-hostname*)
-   (server-port     :accessor server-port     :initarg :server-port     :initform xmpp%:*default-port*)
+   (server-hostname :accessor server-hostname :initarg :server-hostname :initform xmpp%:+default-hostname+)
+   (server-port     :accessor server-port     :initarg :server-port     :initform xmpp%:+default-port+)
    (xml-stream      :accessor xml-stream      :initarg :xml-stream      :initform nil)
    (dispatchers     :accessor dispatchers     :initarg :dispatchers     :initform nil)))
 
@@ -55,7 +55,7 @@
 ;; Basic client's protocol: connect, disconnect, authorize
 ;;
 
-(defmethod connect-client ((client client) &key server-hostname (server-port xmpp%:*default-port*) (adapter 'xmpp%:usocket-adapter))
+(defmethod connect-client ((client client) &key server-hostname (server-port xmpp%:+default-port+) (adapter 'xmpp%:usocket-adapter))
   (let* ((adapter    (make-instance adapter))
          (connection (make-instance 'xmpp%:connection
                                     :adapter  adapter

@@ -204,9 +204,9 @@ into the `xmpp` (since, it's not a part of the stanza protocol anymore)
     - [X] Show usage examples
     - [ ] Merge the development and master branches to make a release
 - [X] Revisit the `core/xeps.lisp`. The `xmpp-xeps:register-xeps` function should work
-in scope of `client` objects. Currently, it affects the global scope, so that if multiple
-`clients` are running in the same lisp image, they are writing/reading to/from a dynamic
-variable *stanzas-dispatchers*, that's a race condition.
+in the context of `client` objects. Currently, it affects the global context, so that if
+multiple `clients` are running in the same lisp image, they are writing/reading to/from a
+dynamic variable *stanzas-dispatchers* simultaneously, that's a race condition.
 - [ ] Write more XEPs (see next item)
     - [ ] *NOT FINISHED* 0045 Multi User Chat (MUC)
     - [X] 0203 Delayed Delivery

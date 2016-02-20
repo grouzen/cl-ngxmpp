@@ -7,15 +7,16 @@
 
 (in-package #:cl-ngxmpp)
 
-(defvar *default-hostname* "localhost")
-(defvar *default-port* 5222)
+(defvar +default-hostname+ "localhost")
+(defvar +default-port+ 5222)
+
 
 (define-condition connection-error (proxy-error)
   ())
 
 (defclass connection ()
-  ((hostname :accessor hostname :initarg :hostname :initform *default-hostname*)
-   (port     :accessor port     :initarg :port     :initform *default-port*)
+  ((hostname :accessor hostname :initarg :hostname :initform +default-hostname+)
+   (port     :accessor port     :initarg :port     :initform +default-port+)
    (adapter  :accessor adapter  :initarg :adapter  :initform nil)))
 
 #+nil

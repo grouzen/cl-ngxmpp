@@ -8,8 +8,8 @@
 (defpackage #:cl-ngxmpp
   (:use #:cl)
   (:nicknames #:xmpp%)
-  (:export #:*default-hostname*
-           #:*default-port*
+  (:export #:+default-hostname+
+           #:+default-port+
            
            ;; Utils
            #:debuggable
