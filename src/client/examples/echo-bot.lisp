@@ -15,8 +15,7 @@
   (labels ((handle-stanzas (xmpp-client)
              (let ((stanza (xmpp:receive-stanza xmpp-client)))
                (when (typep stanza 'xmpp%:message-stanza)
-                 (let ((to   (xmpp%::to   stanza))
-                       (from (xmpp%::from stanza))
+                 (let ((from (xmpp%::from stanza))
                        (body (xmpp%::body stanza)))
                    (if (string= body "stop talking")
                        (progn

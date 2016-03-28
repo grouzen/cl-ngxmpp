@@ -11,7 +11,7 @@
   :name "cl-ngxmpp"
   :author "Michael Nedokushev <michael.nedokushev@gmail.com>"
   :license "Lisp-LGPL"
-  :depends-on (:blackbird :alexandria :usocket :cxml :babel :cl+ssl :cl-base64 :cl-sasl)
+  :depends-on (:blackbird :alexandria :usocket :cxml :babel :cl+ssl :cl-base64 :uuid :cl-mop :cl-sasl)
   :serial t
   :components ((:module "src/core"
                         :serial t

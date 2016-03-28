@@ -97,7 +97,7 @@ Use this API for simple apps or as a foundation for your own extensions above th
 The very basic example how to create a client, connect the client to a xmpp server,
 log in, send a message, and wait for a response:
 
-```commonlisp
+``` lisp
 (ql:quickload :cl-ngxmpp-client)
 
 (let ((xmpp-client (make-instance 'xmpp:client :debuggable t)))
@@ -119,7 +119,7 @@ log in, send a message, and wait for a response:
 
 Another way to handle incoming stanzas, but I wouldn't recommend using it:
 
-```commonlisp
+``` lisp
 (ql:quickload :cl-ngxmpp-client)
 
 ;; Define a method for handling stanzas of a type of 'message'
@@ -144,7 +144,7 @@ Another way to handle incoming stanzas, but I wouldn't recommend using it:
 In case if you miss some functionality in the core XMPP protocol and need to use certain XEPs,
 you can easily turn on needed XEPs (see a list of available XEPs in src/xeps/ directory):
 
-```commonlisp
+``` lisp
 (ql:quickload :cl-ngxmpp-client)
 
 (let ((xmpp-client (make-instance 'xmpp:client :debuggable t)))
@@ -167,13 +167,13 @@ Notice! Current examples are deprecated!
 You can find the examples inside a `src/client/examples/` directory.
 First you need to load an 'examples' system:
 
-```commonlisp
+``` lisp
 (ql:quickload :cl-ngxmpp-client.examples)
 ```
 
 There is an `echo-bot.lisp` example, to run it type in REPL:
 
-```commonlisp
+``` lisp
 (cl-ngxmpp-client.examples.echo-bot:run
     :server-hostname "<your jabber server>"
     :username        "<your jabber login>"
@@ -200,22 +200,28 @@ for messages from him/her in an infinite loop.
 into the `xmpp` (since, it's not a part of the stanza protocol anymore)
 - [X] Get rid of the `send-*` methods/functions, substitute them with a `send-stanza` macro
 - [X] Re-think and (it would be better) rewrite/remove some code in the `client/xeps/xeps.lisp`
-- [ ] Prepare the core version of the library for getting it into quicklisp repo
-    - [X] Show usage examples
-    - [ ] Merge the development and master branches to make a release
 - [X] Revisit the `core/xeps.lisp`. The `xmpp-xeps:register-xeps` function should work
 in the context of `client` objects. Currently, it affects the global context, so that if
 multiple `clients` are running in the same lisp image, they are writing/reading to/from a
 dynamic variable *stanzas-dispatchers* simultaneously, that's a race condition.
+- [ ] Implement an utility to generate a stanza id
+- [ ] Generate the make-stanza methods automatically by macro
+- [ ] Prepare the core version of the library for getting it into quicklisp repo
+    - [X] Show usage examples
+    - [ ] Merge the development and master branches to make a release
 - [ ] Write more XEPs (see next item)
     - [ ] *NOT FINISHED* 0045 Multi User Chat (MUC)
     - [X] 0203 Delayed Delivery
     - [X] 0004 Data Forms
     - [ ] *NOT FINISHED* 0077 In-Band Registration
+- [ ] Add the remaining stanzas of the core protocol 
 - [ ] Figure out how to validate stanzas (xml schema is a good option I guess).
 Since there is no CL library for xmlschema, I can go further and try to develop one. It can be used for
 stanza validation/generation, and can avoid a manual work for these areas in the future.
-- [ ] Implement an utility to generate the stanza id
+- [ ] Make a logging subsystem pluggable
+- [ ] Avoid creating a lot of object while dispatching through the stanzas hierarchy,
+because this can create an additional load on a GC. I might do a research how MOP can help
+me with this.
 - [ ] Develop a high-level interface (EPIC)
 - [ ] Rewrite the tests using mocks
 - [ ] Add more comments and code documentation

@@ -9,11 +9,20 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
-;;
+;; Useful classes to inherit from
 ;;
 
 (defclass statefull ()
   ((state :accessor state :initarg :state :initform nil)))
+
+(defclass debuggable ()
+  ((debuggable :accessor debuggable :initarg :debuggable :initform nil)))
+
+(defmethod print-debug ((debuggable debuggable) format &rest args)
+  (when (debuggable debuggable)
+    (write-string "[DEBUG]: ")
+    (write-line (apply #'format nil format args) *debug-io*)
+    (force-output *debug-io*)))
 
 ;; (defmacro chain-statefull (init-clause &body chain)
 ;;   (labels ((unflat-chain (chain)
@@ -36,15 +45,6 @@
 ;;            ,init-clause)
 ;;          ,unflatten-chain))))
 
-(defclass debuggable ()
-  ((debuggable :accessor debuggable :initarg :debuggable :initform nil)))
-
-(defmethod print-debug ((debuggable debuggable) format &rest args)
-  (when (debuggable debuggable)
-    (write-string "[DEBUG]: ")
-    (write-line (apply #'format nil format args) *debug-io*)
-    (force-output *debug-io*)))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; Misc utils
@@ -66,12 +66,10 @@ a better way tell me, please."
     (declare (ignore keyword-status))
     keyword-name))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; It allows us not to worry about underlying adapters (usocket, iolib, etc)
 ;; which can act in blocking or asynchronous ways.
 ;;
-
 (defun resolve-async-value (av)
   (cond ((not (bb:promisep av)) av)
         (t (let ((ret ""))
@@ -79,7 +77,6 @@ a better way tell me, please."
                (setf ret v))
              ret))))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;;
 ;; To use a condition with a WITH-PROXY-ERROR macro,
 ;; it should be a successor of a PROXY-ERROR condition.

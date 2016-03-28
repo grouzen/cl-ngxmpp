@@ -16,8 +16,8 @@
   :components ((:module "src/xeps"
                         :serial t
                         :components ((:file "package")
-                                     (:file "xeps")
-                                     (:file "xep-0004")
-                                     (:file "xep-0045")
-                                     (:file "xep-0203")))))
+                                     (:file "xeps")))))
+                                     ;;(:file "xep-0004")
+                                     ;;(:file "xep-0045")
+                                     ;;(:file "xep-0203")))))
 

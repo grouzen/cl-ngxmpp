@@ -119,17 +119,17 @@
 ;;
 
 (defmacro define-xep ((xep-name &key order description depends-on) &body body)
-    `(let* ((xep-name-string (string-downcase (symbol-name ',xep-name)))
-            (xep-obj         (make-instance 'xep
-                                         :name        xep-name-string
-                                         :order       ,order
-                                         :description ,description
-                                         :depends-on  ',depends-on)))
-       (setf (getf *xeps-list* (string-to-keyword xep-name-string)) xep-obj)
-       ,@(mapcar #'(lambda (stanza-definition)
-                     `(define-xep-stanza% (,xep-name)
-                        ,stanza-definition))
-                 (car body))))
+  `(let* ((xep-name-string (string-downcase (symbol-name ',xep-name)))
+          (xep-obj         (make-instance 'xep
+                                          :name        xep-name-string
+                                          :order       ,order
+                                          :description ,description
+                                          :depends-on  ',depends-on)))
+     (setf (getf *xeps-list* (string-to-keyword xep-name-string)) xep-obj)
+     ,@(mapcar #'(lambda (stanza-definition)
+                   `(define-xep-stanza% (,xep-name)
+                      ,stanza-definition))
+               (car body))))
 
 (defmacro define-xep-stanza% ((xep-name) &body body)
   (let* ((stanza-repr   (first body))
